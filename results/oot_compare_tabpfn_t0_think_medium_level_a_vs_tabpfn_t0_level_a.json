@@ -1,0 +1,22 @@
+{
+  "a": "tabpfn_t0_think_medium_level_a",
+  "b": "tabpfn_t0_level_a",
+  "metric": "rmse_ln",
+  "seed": 42,
+  "wilcoxon_blocks": {
+    "n_folds": 10,
+    "statistic": 24.0,
+    "p_value": 0.76953125,
+    "mean_diff": -0.00024000781544874505
+  },
+  "block_bootstrap": {
+    "metric": "rmse_ln",
+    "n_boot": 2000,
+    "diff": 0.00028018628530407375,
+    "ci95": [
+      -0.001395646828424868,
+      0.0014629844418335577
+    ],
+    "p_boot_two_sided": 0.696
+  }
+}

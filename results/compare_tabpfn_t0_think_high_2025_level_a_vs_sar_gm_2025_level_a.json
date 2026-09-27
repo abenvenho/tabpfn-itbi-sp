@@ -1,0 +1,22 @@
+{
+  "a": "tabpfn_t0_think_high_2025_level_a",
+  "b": "sar_gm_2025_level_a",
+  "metric": "mape_pct",
+  "seed": 42,
+  "wilcoxon": {
+    "n_folds": 10,
+    "statistic": 2.0,
+    "p_value": 0.005859375,
+    "mean_diff": -8.311433436693067
+  },
+  "block_bootstrap": {
+    "metric": "mape_pct",
+    "n_boot": 2000,
+    "diff": -6.740643006121989,
+    "ci95": [
+      -11.719519585284043,
+      -1.341743410557698
+    ],
+    "p_boot_two_sided": 0.011
+  }
+}

@@ -128,6 +128,12 @@ python -m src.model_xgb --no-lag --seeds 42 43 44       # ablation without the k
 bash scripts/10_tabpfn_level_a.sh check                 # token, models, allowance, cost estimates (no quota)
 bash scripts/10_tabpfn_level_a.sh t0                    # zero-shot, + paired tests vs SAR / XGB / OLS
 bash scripts/10_tabpfn_level_a.sh t0-think              # thinking mode (medium)
+
+# 8. out-of-time: fit on 2025, predict 2026 (baselines here, TabPFN via API)
+python -m src.out_of_time --model ols --train level_a
+python -m src.out_of_time --model sar --train level_a
+python -m src.out_of_time --model xgb --train level_a --seeds 42 43 44
+bash scripts/20_tabpfn_out_of_time.sh t0 && bash scripts/20_tabpfn_out_of_time.sh compare
 ```
 
 TabPFN-3.5 responses are cached under `results/tabpfn_cache/<label>/`, so
@@ -152,8 +158,9 @@ weights matrix (higher = more spatial structure left unexplained).
 | SAR lag, GM_Lag (ρ = 0.91) | 0.448 | 38.4% | 0.155 | 0.363 |
 | XGBoost + rotated coordinates (no lag; ablation) | 0.397 (3 seeds: 0.395–0.397) | 33.3% | 0.334 | 0.355 |
 | **XGBoost + rotated coordinates + k-NN-8 lag** | **0.385** (3 seeds: 0.384–0.387) | **32.3%** | **0.376** | 0.309 |
-| **TabPFN-3.5, plain table, zero-shot** (no spatial modelling) | 0.394 | 32.2% | 0.346 | 0.348 |
+| **TabPFN-3.5, plain table, zero-shot** (no spatial modelling) | 0.394 (3 seeds: 0.390–0.394) | 32.2% | 0.346 | 0.348 |
 | **TabPFN-3.5, plain table, thinking mode (medium)** | 0.389 | **31.7%** | 0.362 | 0.342 |
+| TabPFN-3.5, plain table, thinking mode (high) | 0.388 | **31.7%** | 0.366 | 0.339 |
 
 Paired tests (`results/compare_*.json`, seed 42): SAR vs OLS improves the
 pooled RMSE by 0.023 but **not consistently** across folds (wins 6 of 10
@@ -175,8 +182,9 @@ spatial XGBoost** (ΔRMSE_ln = +0.009 [−0.018, +0.034]; ΔMAPE = −0.1 pp
 [−3.7, +3.8]; wins 7 of 10 blocks, loses clearly in the largest one).
 Thinking mode (medium effort, ~100 s per fold) improves it slightly and
 consistently (ΔRMSE_ln vs zero-shot = −0.005 [−0.008, −0.001]) and gives
-the lowest MAPE in the table. On the sharpest criterion the hypothesis is
-**partly refuted**: the residual Moran's I of TabPFN (0.348 zero-shot,
+the lowest MAPE in the table; high effort costs ~13× more per fold and adds
+nothing beyond noise. On the sharpest criterion the hypothesis is **partly
+refuted** in this leg: the residual Moran's I of TabPFN (0.348 zero-shot,
 0.342 thinking) is below SAR's (0.363) but above that of XGBoost with the
 explicit lag (0.309) — without seeing space, the foundation model leaves
 more spatial structure unexplained than the specialist that models it,
@@ -187,6 +195,48 @@ study (R² 0.54 there) — expected with *declared* prices, three property
 types and fiscal-block-centroid coordinates — and every model still leaves
 substantial spatial autocorrelation in its residuals, which is the bar set
 for TabPFN-3.5.
+
+## Results — out-of-time: fit on 2025, predict the 47,810 transactions of 2026
+
+The second leg of the protocol (`src/out_of_time.py`): one fit on the 2025
+base, predictions for every cleaned 2026 transaction (one to seven months
+after the training window; `mes_idx` 13–19 vs 1–12). Nothing from 2026
+touches fitting or tuning. Unlike the block CV, this test is *inside*
+space — the 2026 properties sit in the same blocks as the training data,
+one year later — so errors are lower for everyone and the spatial-lag
+models get neighbours from the same streets: the most favourable setting
+for explicit spatial modelling. Moran's I is on a k-NN-8 matrix of the
+2026 coordinates; "bias" is the mean residual in ln (positive = prices
+under-predicted).
+
+| Model (trained on Level A, 24,000 rows) | RMSE (ln) | MAPE | R² (ln) | Bias (ln) | Moran's I |
+|---|---|---|---|---|---|
+| OLS hedonic | 0.404 | 32.4% | 0.185 | +0.033 | 0.408 |
+| SAR lag, GM_Lag | 0.346 | 27.0% | 0.401 | +0.033 | 0.224 |
+| XGBoost + rotated coordinates + k-NN-8 lag | 0.288 (3 seeds: ±0.000) | 21.8% | 0.584 | +0.047 | 0.140 |
+| **TabPFN-3.5, plain table, zero-shot** (fit in 9 s) | **0.275** | **20.4%** | **0.622** | +0.055 | **0.122** |
+| TabPFN-3.5, plain table, thinking (medium) | 0.275 | 20.5% | 0.621 | +0.055 | 0.121 |
+
+Paired tests over the ten 2026 blocks (`results/oot_compare_*.json`,
+`results/oot_paired_comparisons_level_a.csv`): TabPFN zero-shot vs XGBoost
+with the explicit lag, ΔRMSE_ln = −0.013 [−0.016, −0.011], ΔMAPE = −1.4 pp
+[−1.6, −1.2], **better in 10 of 10 blocks** (Wilcoxon p = 0.002) and with
+*less* residual spatial autocorrelation (0.122 vs 0.140); vs SAR, ΔRMSE_ln
+= −0.071 [−0.079, −0.062], ΔMAPE = −6.6 pp, half the residual Moran's I.
+Thinking mode adds nothing here (ΔRMSE_ln = +0.0003). In this leg the
+hypothesis survives every criterion, including the residual one.
+
+Leakage check before believing it: zero identical transactions (same
+cadastral key, date and price) between the 2026 test and any 2025 base;
+0.6% of the 2026 rows share a cadastral key (same lot or building) with
+Level A. Errors are flat across blocks (0.25–0.32) and across horizons of
+one to seven months (0.26–0.29), so the result is not driven by a subset.
+
+**Limitation worth stating.** Every model under-predicts 2026 (prices
+rose), and the two non-linear learners more so (bias +0.05 vs +0.03 for the
+linear models): trees and TabPFN hold the last observed level of the month
+index instead of extrapolating a trend. For appraisal practice this calls
+for a trend or index adjustment; it is reported, not corrected, here.
 
 **Why XGBoost with spatial features rather than G-XGBoost.** Geographically
 weighted XGBoost (`geoxgboost`, one of the methods of the reference study)
@@ -222,12 +272,12 @@ paper/         reference paper (English translation forthcoming)
       Moran's I, Wilcoxon + block bootstrap, multi-seed CIs
 - [x] Baselines on Level A: OLS, SAR lag (`spreg` GM_Lag), XGBoost with
       spatial features (nested Optuna); G-XGBoost feasibility pilot
-- [x] TabPFN-3.5 on the plain table: zero-shot and thinking mode (medium),
-      paired against the explicitly spatial baselines (`src/model_tabpfn.py`)
-- [ ] Thinking mode (high effort), extra seeds, block-grouped thinking
-      (robustness); optional extensions beyond the core claim:
-      high-cardinality location labels (neighbourhood, postcode), text fields
-- [ ] Out-of-time test 2025 → 2026; financed-only robustness run
+- [x] TabPFN-3.5 on the plain table: zero-shot, thinking (medium, high),
+      three seeds, paired against the explicitly spatial baselines
+- [x] Out-of-time test 2025 → 2026 (Level A training)
+- [ ] Full 2025 base (82k) out-of-time; block-grouped thinking (robustness);
+      financed-only robustness run; optional extensions beyond the core
+      claim: high-cardinality location labels, text fields
 - [ ] 80% prediction intervals, NBR 14653-2 precision grades, traceable
       comparables, SHAP
 - [ ] Streamlit app and 2–3 min video

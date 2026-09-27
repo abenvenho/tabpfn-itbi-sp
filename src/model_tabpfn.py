@@ -97,10 +97,12 @@ class TabPFNT0Model:
     def __init__(self, cache_dir: Path, block: str, seed: int = SEED,
                  thinking: str = "off", group_col: str | None = None,
                  thinking_timeout_s: float = 2400.0,
-                 quantiles: list[float] | None = None, chunk: int = 5000):
+                 quantiles: list[float] | None = None, chunk: int = 5000,
+                 ignore_pretraining_limits: bool = False):
         self.cache_dir, self.block, self.seed = cache_dir, block, seed
         self.thinking, self.group_col = thinking, group_col
         self.timeout, self.quantiles, self.chunk = thinking_timeout_s, quantiles, chunk
+        self.ignore_limits = ignore_pretraining_limits
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
     # cache paths -------------------------------------------------------
@@ -109,7 +111,8 @@ class TabPFNT0Model:
 
     def _make(self):
         from tabpfn_client import TabPFNRegressor
-        kw = dict(random_state=self.seed)
+        kw = dict(random_state=self.seed,
+                  ignore_pretraining_limits=self.ignore_limits)
         if self.thinking != "off":
             kw.update(thinking_mode=True, thinking_effort=self.thinking,
                       thinking_timeout_s=self.timeout, thinking_metric="rmse")

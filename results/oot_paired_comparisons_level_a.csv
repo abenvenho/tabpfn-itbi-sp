@@ -1,0 +1,15 @@
+a,b,metric,pooled_diff,ci_lo,ci_hi,wilcoxon_p_blocks
+tabpfn_t0,sar_gm,rmse_ln,-0.0709,-0.0788,-0.0624,0.002
+tabpfn_t0,sar_gm,mape_pct,-6.5707,-7.1377,-6.1126,0.002
+tabpfn_t0,xgb_lag,rmse_ln,-0.0135,-0.0157,-0.0106,0.002
+tabpfn_t0,xgb_lag,mape_pct,-1.4268,-1.6286,-1.2063,0.002
+tabpfn_t0,ols,rmse_ln,-0.1287,-0.1625,-0.0935,0.002
+tabpfn_t0,ols,mape_pct,-12.0321,-14.2196,-10.0501,0.002
+tabpfn_t0_think_medium,tabpfn_t0,rmse_ln,0.0003,-0.0014,0.0015,0.7695
+tabpfn_t0_think_medium,tabpfn_t0,mape_pct,0.0876,0.0504,0.1294,0.0195
+tabpfn_t0_think_medium,xgb_lag,rmse_ln,-0.0132,-0.015,-0.0113,0.002
+tabpfn_t0_think_medium,xgb_lag,mape_pct,-1.3392,-1.5143,-1.1328,0.002
+xgb_lag,sar_gm,rmse_ln,-0.0575,-0.0641,-0.0507,0.002
+xgb_lag,sar_gm,mape_pct,-5.1439,-5.7497,-4.7248,0.002
+sar_gm,ols,rmse_ln,-0.0578,-0.0844,-0.0307,0.002
+sar_gm,ols,mape_pct,-5.4613,-7.266,-3.7452,0.002

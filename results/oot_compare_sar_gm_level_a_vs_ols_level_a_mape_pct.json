@@ -1,0 +1,22 @@
+{
+  "a": "sar_gm_level_a",
+  "b": "ols_level_a",
+  "metric": "mape_pct",
+  "seed": 42,
+  "wilcoxon_blocks": {
+    "n_folds": 10,
+    "statistic": 0.0,
+    "p_value": 0.001953125,
+    "mean_diff": -5.857734071669126
+  },
+  "block_bootstrap": {
+    "metric": "mape_pct",
+    "n_boot": 2000,
+    "diff": -5.461348389824835,
+    "ci95": [
+      -7.2660270498703605,
+      -3.7451626542967063
+    ],
+    "p_boot_two_sided": 0.0
+  }
+}

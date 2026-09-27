@@ -1,0 +1,22 @@
+{
+  "a": "sar_gm_level_a",
+  "b": "ols_level_a",
+  "metric": "rmse_ln",
+  "seed": 42,
+  "wilcoxon_blocks": {
+    "n_folds": 10,
+    "statistic": 0.0,
+    "p_value": 0.001953125,
+    "mean_diff": -0.05223441068457613
+  },
+  "block_bootstrap": {
+    "metric": "rmse_ln",
+    "n_boot": 2000,
+    "diff": -0.05777460727212641,
+    "ci95": [
+      -0.08444766057615825,
+      -0.03070165483474618
+    ],
+    "p_boot_two_sided": 0.0
+  }
+}

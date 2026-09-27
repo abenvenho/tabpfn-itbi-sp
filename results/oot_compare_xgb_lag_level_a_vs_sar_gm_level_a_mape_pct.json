@@ -1,0 +1,22 @@
+{
+  "a": "xgb_lag_level_a",
+  "b": "sar_gm_level_a",
+  "metric": "mape_pct",
+  "seed": 42,
+  "wilcoxon_blocks": {
+    "n_folds": 10,
+    "statistic": 0.0,
+    "p_value": 0.001953125,
+    "mean_diff": -5.339429485559892
+  },
+  "block_bootstrap": {
+    "metric": "mape_pct",
+    "n_boot": 2000,
+    "diff": -5.143899949195369,
+    "ci95": [
+      -5.749680535258818,
+      -4.724762294247617
+    ],
+    "p_boot_two_sided": 0.0
+  }
+}
