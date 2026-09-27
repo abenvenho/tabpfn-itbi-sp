@@ -1,21 +1,21 @@
 {
-  "a": "xgb_lag_2025_level_a",
+  "a": "xgb_nolag_2025_level_a",
   "b": "sar_gm_2025_level_a",
-  "metric": "rmse_ln",
+  "metric": "mape_pct",
   "seed": 42,
   "wilcoxon": {
     "n_folds": 10,
     "statistic": 0.0,
     "p_value": 0.001953125,
-    "mean_diff": -0.06790599744782513
+    "mean_diff": -5.58768372644816
   },
   "block_bootstrap": {
-    "metric": "rmse_ln",
+    "metric": "mape_pct",
     "n_boot": 2000,
-    "diff": -0.062967726159189,
+    "diff": -5.117738853295833,
     "ci95": [
-      -0.08545984807097846,
-      -0.04633841553629237
+      -7.245131798246322,
+      -3.184282340038372
     ],
     "p_boot_two_sided": 0.0
   }

@@ -28,7 +28,7 @@ if [ -z "${TABPFN_TOKEN:-}" ]; then
   exit 1
 fi
 
-Q="--quantiles 0.1 0.25 0.5 0.75 0.9"      # 80% and 50% predictive intervals, cached for later
+Q="--quantiles 0.1 0.25 0.5 0.75 0.9"      # 80% and 50% predictive intervals (zero-shot fits only)
 BASE="--compare-with sar_gm_2025_level_a xgb_lag_2025_level_a ols_2025_level_a"
 
 case "${1:-}" in

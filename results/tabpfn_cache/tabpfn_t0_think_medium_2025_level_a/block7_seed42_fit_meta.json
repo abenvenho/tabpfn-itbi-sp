@@ -1,0 +1,8 @@
+{
+  "block": "7",
+  "seed": 42,
+  "n_train": 21856,
+  "thinking": "medium",
+  "group_col": null,
+  "fit_s": 99.6
+}

@@ -131,7 +131,10 @@ bash scripts/10_tabpfn_level_a.sh t0-think              # thinking mode (medium)
 ```
 
 TabPFN-3.5 responses are cached under `results/tabpfn_cache/<label>/`, so
-the protocol can be re-run offline from the cached predictions.
+the protocol can be re-run offline from the cached predictions. The TabPFN
+runs use their own environment (`requirements-tabpfn.txt`, because
+`tabpfn-client` pins pandas ≤ 2.3.3); they were executed on macOS with
+Python 3.14 and the baselines on Linux with Python 3.11.
 
 All seeds are fixed (42, plus 43/44 where a model is stochastic); no
 downloads or geocoding APIs are called at runtime.
@@ -149,8 +152,8 @@ weights matrix (higher = more spatial structure left unexplained).
 | SAR lag, GM_Lag (ρ = 0.91) | 0.448 | 38.4% | 0.155 | 0.363 |
 | XGBoost + rotated coordinates (no lag; ablation) | 0.397 (3 seeds: 0.395–0.397) | 33.3% | 0.334 | 0.355 |
 | **XGBoost + rotated coordinates + k-NN-8 lag** | **0.385** (3 seeds: 0.384–0.387) | **32.3%** | **0.376** | 0.309 |
-| TabPFN-3.5, plain table (zero-shot) | *(next)* | | | |
-| TabPFN-3.5, plain table (thinking mode) | *(next)* | | | |
+| **TabPFN-3.5, plain table, zero-shot** (no spatial modelling) | 0.394 | 32.2% | 0.346 | 0.348 |
+| **TabPFN-3.5, plain table, thinking mode (medium)** | 0.389 | **31.7%** | 0.362 | 0.342 |
 
 Paired tests (`results/compare_*.json`, seed 42): SAR vs OLS improves the
 pooled RMSE by 0.023 but **not consistently** across folds (wins 6 of 10
@@ -161,7 +164,25 @@ the spatial lag beats SAR in **10 of 10 blocks** (Wilcoxon p = 0.002; pooled
 −0.013 [−0.024, −0.004] (wins 7 of 10 blocks, Wilcoxon p = 0.027) and cuts
 the residual Moran's I from 0.355 to 0.309 — the price of *not* modelling
 space explicitly, for a strong tree learner that already sees the
-coordinates. Errors are much larger than in the Belo Horizonte listings
+coordinates.
+
+**Where the central hypothesis stands (Level A).** TabPFN-3.5 with the
+plain table — nine raw columns, coordinates as two numbers, zero-shot, ten
+seconds per fold — beats the SAR lag model in 8 of 10 blocks (ΔRMSE_ln =
+−0.054, block-bootstrap 95% CI [−0.100, −0.014], Wilcoxon p = 0.010; ΔMAPE
+= −6.2 pp) and is **statistically indistinguishable from the fully
+spatial XGBoost** (ΔRMSE_ln = +0.009 [−0.018, +0.034]; ΔMAPE = −0.1 pp
+[−3.7, +3.8]; wins 7 of 10 blocks, loses clearly in the largest one).
+Thinking mode (medium effort, ~100 s per fold) improves it slightly and
+consistently (ΔRMSE_ln vs zero-shot = −0.005 [−0.008, −0.001]) and gives
+the lowest MAPE in the table. On the sharpest criterion the hypothesis is
+**partly refuted**: the residual Moran's I of TabPFN (0.348 zero-shot,
+0.342 thinking) is below SAR's (0.363) but above that of XGBoost with the
+explicit lag (0.309) — without seeing space, the foundation model leaves
+more spatial structure unexplained than the specialist that models it,
+while matching its point-prediction error.
+
+Errors are much larger than in the Belo Horizonte listings
 study (R² 0.54 there) — expected with *declared* prices, three property
 types and fiscal-block-centroid coordinates — and every model still leaves
 substantial spatial autocorrelation in its residuals, which is the bar set
@@ -201,10 +222,11 @@ paper/         reference paper (English translation forthcoming)
       Moran's I, Wilcoxon + block bootstrap, multi-seed CIs
 - [x] Baselines on Level A: OLS, SAR lag (`spreg` GM_Lag), XGBoost with
       spatial features (nested Optuna); G-XGBoost feasibility pilot
-- [ ] TabPFN-3.5 on the plain table: zero-shot and thinking mode, paired
-      against the explicitly spatial baselines (`src/model_tabpfn.py`);
-      optional extensions beyond the core claim: high-cardinality location
-      labels (neighbourhood, postcode), text fields
+- [x] TabPFN-3.5 on the plain table: zero-shot and thinking mode (medium),
+      paired against the explicitly spatial baselines (`src/model_tabpfn.py`)
+- [ ] Thinking mode (high effort), extra seeds, block-grouped thinking
+      (robustness); optional extensions beyond the core claim:
+      high-cardinality location labels (neighbourhood, postcode), text fields
 - [ ] Out-of-time test 2025 → 2026; financed-only robustness run
 - [ ] 80% prediction intervals, NBR 14653-2 precision grades, traceable
       comparables, SHAP

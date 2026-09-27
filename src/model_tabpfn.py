@@ -38,6 +38,10 @@ Runs
   (it is spatial information entering through the tuning, hence not the
   main analysis).
 
+Predictive quantiles (for the 80 % intervals used later) are requested only
+from zero-shot fits: the server returns point predictions only for models
+fitted in thinking mode.
+
 Every API response is cached under ``results/tabpfn_cache/<label>/`` —
 fitted-model records (``save_model``) and predictions per fold — so a
 configuration is paid for once and the protocol can be re-run offline.
@@ -147,7 +151,10 @@ class TabPFNT0Model:
                                   dtype=float))
         pred = np.concatenate(out)
         np.save(p, pred)
-        if self.quantiles:
+        # the server returns point predictions only for thinking-fitted models
+        # (HTTP 422 on output_type="quantiles"); quantiles come from the
+        # zero-shot fit of the same fold
+        if self.quantiles and self.thinking == "off":
             qs = []
             for i in range(0, len(X), self.chunk):
                 q = self.model_.predict(X.iloc[i:i + self.chunk],

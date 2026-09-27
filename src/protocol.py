@@ -295,7 +295,8 @@ def compare_models(label_a: str, label_b: str, df: pd.DataFrame,
            "wilcoxon": paired_wilcoxon(pf_a, pf_b),
            "block_bootstrap": block_bootstrap_diff(y, yhat_a, yhat_b,
                                                    blocks, metric)}
-    (out_dir / f"compare_{label_a}_vs_{label_b}.json").write_text(
+    suffix = "" if metric == "rmse_ln" else f"_{metric}"
+    (out_dir / f"compare_{label_a}_vs_{label_b}{suffix}.json").write_text(
         json.dumps(out, indent=2), encoding="utf-8")
     return out
 
