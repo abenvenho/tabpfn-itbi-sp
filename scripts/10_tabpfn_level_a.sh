@@ -9,17 +9,19 @@
 #   bash scripts/10_tabpfn_level_a.sh t0-seeds   # extra seeds 43 44 for the zero-shot run (CI)
 #   bash scripts/10_tabpfn_level_a.sh t0-think-grp  # robustness: block as thinking group_col
 #
+# Uses its own virtual environment (.venv-tabpfn, from requirements-tabpfn.txt).
 # Every API response is cached under results/tabpfn_cache/<label>/, so a step
 # can be re-run (or interrupted and resumed) without paying twice.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-if [ ! -d .venv ]; then
-  python3 -m venv .venv
+if [ ! -d .venv-tabpfn ]; then
+  python3 -m venv .venv-tabpfn
 fi
 # shellcheck disable=SC1091
-source .venv/bin/activate
-pip install -q -r requirements.txt
+source .venv-tabpfn/bin/activate
+pip install -q --upgrade pip >/dev/null
+pip install -q -r requirements-tabpfn.txt
 
 if [ -z "${TABPFN_TOKEN:-}" ]; then
   echo "TABPFN_TOKEN is not set. Run: export TABPFN_TOKEN=\"<key>\"" >&2

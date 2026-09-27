@@ -8,6 +8,7 @@ Thumbs.db
 __pycache__/
 *.pyc
 .venv/
+.venv-tabpfn/
 venv/
 .ipynb_checkpoints/
 

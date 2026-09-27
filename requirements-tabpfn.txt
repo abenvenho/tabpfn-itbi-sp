@@ -1,0 +1,12 @@
+# Environment for the TabPFN-3.5 runs (src/model_tabpfn.py, scripts/) — separate
+# from requirements.txt because tabpfn-client pins pandas<=2.3.3. The protocol
+# code (src/protocol.py) runs unchanged on this pandas version; the cleaned CSVs
+# in data/ are read, never regenerated, here.
+pandas==2.3.3
+numpy==2.4.4
+scipy==1.17.1
+scikit-learn==1.8.0
+shapely==2.1.2
+libpysal==4.14.1
+esda==2.9.0
+tabpfn-client==0.6.0
