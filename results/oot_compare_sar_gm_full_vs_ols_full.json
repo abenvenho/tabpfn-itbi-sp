@@ -1,0 +1,22 @@
+{
+  "a": "sar_gm_full",
+  "b": "ols_full",
+  "metric": "rmse_ln",
+  "seed": 42,
+  "wilcoxon_blocks": {
+    "n_folds": 10,
+    "statistic": 0.0,
+    "p_value": 0.001953125,
+    "mean_diff": -0.06965930716487581
+  },
+  "block_bootstrap": {
+    "metric": "rmse_ln",
+    "n_boot": 2000,
+    "diff": -0.0758552546636081,
+    "ci95": [
+      -0.10191532656492773,
+      -0.048399237143090856
+    ],
+    "p_boot_two_sided": 0.0
+  }
+}

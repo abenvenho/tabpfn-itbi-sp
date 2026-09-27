@@ -1,0 +1,22 @@
+{
+  "a": "xgb_lag_full",
+  "b": "sar_gm_full",
+  "metric": "mape_pct",
+  "seed": 42,
+  "wilcoxon_blocks": {
+    "n_folds": 10,
+    "statistic": 0.0,
+    "p_value": 0.001953125,
+    "mean_diff": -3.7123423717076873
+  },
+  "block_bootstrap": {
+    "metric": "mape_pct",
+    "n_boot": 2000,
+    "diff": -3.5036442177821314,
+    "ci95": [
+      -4.146792093240902,
+      -2.94771904892509
+    ],
+    "p_boot_two_sided": 0.0
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "a": "tabpfn_t0_full",
+  "b": "sar_gm_full",
+  "metric": "rmse_ln",
+  "seed": 42,
+  "wilcoxon_blocks": {
+    "n_folds": 10,
+    "statistic": 0.0,
+    "p_value": 0.001953125,
+    "mean_diff": -0.061266923861642994
+  },
+  "block_bootstrap": {
+    "metric": "rmse_ln",
+    "n_boot": 2000,
+    "diff": -0.060737929434950655,
+    "ci95": [
+      -0.06659143098245107,
+      -0.05480939839769078
+    ],
+    "p_boot_two_sided": 0.0
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "params": {
+    "learning_rate": 0.04932741896945966,
+    "max_depth": 7,
+    "min_child_weight": 2.0077538192494826,
+    "subsample": 0.8881541236698364,
+    "colsample_bytree": 0.5624383090542402,
+    "reg_lambda": 0.003302862876573358,
+    "reg_alpha": 0.0040500333075054054,
+    "gamma": 0.003076354496572229,
+    "n_estimators": 398
+  },
+  "inner_rmse_ln": 0.3510699183476823,
+  "inner_best_iterations": [
+    377,
+    437,
+    193,
+    291,
+    77,
+    436,
+    648,
+    339,
+    132,
+    882
+  ],
+  "n_trials": 30,
+  "tuning_s": 901.4
+}
