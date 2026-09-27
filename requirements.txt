@@ -1,0 +1,14 @@
+# Data pipeline (pipeline/01–04) and evaluation protocol (src/protocol.py).
+# Model dependencies (spreg, geoxgboost, tabpfn-client, optuna, shap,
+# streamlit) are added and pinned together with the model wrappers.
+pandas==3.0.2
+numpy==2.4.4
+scikit-learn==1.8.0
+openpyxl==3.1.5
+python-calamine==0.8.2
+shapely==2.1.2
+pyproj==3.7.2
+scipy==1.17.1
+libpysal==4.14.1
+esda==2.9.0
+spreg==1.9.0

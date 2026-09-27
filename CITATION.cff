@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software or dataset, please cite it as below."
+title: "Mass Appraisal of São Paulo Real Estate with TabPFN-3.5"
+type: software
+authors:
+  - family-names: "Benvenho"
+    given-names: "Agnaldo Calvi"
+    orcid: ""
+    affiliation: "BP Avaliações e Perícias / IBAPE Nacional"
+version: "0.1.0"
+date-released: "2026-09-27"
+license: Apache-2.0
+keywords:
+  - mass appraisal
+  - real estate valuation
+  - TabPFN
+  - tabular foundation models
+  - spatial cross-validation
+  - ITBI
+  - "São Paulo"
+abstract: >-
+  Spatial machine-learning comparison (SAR, G-XGBoost, TabPFN-3.5) for mass
+  appraisal on 82,187 actual transaction prices from the São Paulo
+  real-estate transfer tax (ITBI), with spatial-block cross-validation,
+  out-of-time testing on 2026 transactions, prediction intervals graded
+  under the Brazilian appraisal standard NBR 14653-2, and traceable
+  comparables. Prior Labs TabPFN-3.5 Hackathon entry.
+references:
+  - type: article
+    title: >-
+      Métodos não lineares versus regressão espacial na avaliação de
+      apartamentos: um estudo comparativo em Belo Horizonte
+    authors:
+      - family-names: "Benvenho"
+        given-names: "Agnaldo Calvi"
+    year: 2026
+    notes: "Awarded at CEAD 2026; English translation forthcoming in paper/."

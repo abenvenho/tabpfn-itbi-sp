@@ -1,0 +1,26 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Internal working notes (Portuguese planning docs, not part of the entry)
+notes/
+
+# Large regenerable geodata: the GPKG pages (~110 MB) can be re-downloaded
+# from GeoSampa (see DATA_NOTICE.md); the derived centroid CSVs are versioned.
+data/raw/quadra_fiscal_p*.gpkg
+
+# Uncompressed copies of the training bases (the .csv.gz files are versioned)
+data/itbi_sp_2025_train.csv
+data/english/itbi_sp_2025_train_en.csv
+
+# Logs and scratch
+*.log
