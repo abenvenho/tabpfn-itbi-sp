@@ -19,7 +19,7 @@ winning out-of-sample. This project raises the bar in four ways:
 2. **Scale**: 82k training records across three property types
    (apartment / house / commercial), with a 24k stratified sample
    ("Level A") for a three-model comparison — SAR (spatial econometrics),
-   G-XGBoost (geographically weighted gradient boosting) and **TabPFN-3.5**
+   XGBoost with spatial features (gradient boosting) and **TabPFN-3.5**
    — and the full base ("Level B") for TabPFN-3.5 alone.
 3. **Honest evaluation**: spatial block cross-validation (K-means, k=10),
    out-of-time testing (train on 2025, predict 2026), multiple seeds,
@@ -28,6 +28,28 @@ winning out-of-sample. This project raises the bar in four ways:
    intervals per property → empirical coverage and precision grading under
    the Brazilian appraisal standard **NBR 14653-2**, plus traceable
    comparables (which training rows drive each prediction) and SHAP values.
+
+## Central hypothesis (stated so that it can fail)
+
+> A tabular foundation model that receives only the property attributes and
+> the coordinates as two ordinary numeric columns — **no spatial weights
+> matrix, no spatial lag, no engineered neighbourhood features** — predicts
+> spatially correlated prices as well as, or better than, specialised models
+> that encode spatial dependence explicitly.
+
+The comparison is deliberately asymmetric *against* the hypothesis. The
+baselines keep every spatial advantage: the SAR lag model has its k-NN
+weights matrix and ρ; XGBoost gets a fold-internal k-NN-8 spatial lag,
+rotated coordinate axes and nested Optuna tuning. **TabPFN-3.5 gets the
+plain table** (built and lot area, age, finish grade, distance to the
+nearest station, month, property type, latitude, longitude) and is run
+zero-shot and in thinking mode. If it matches or beats the specialists, the
+result cannot be attributed to a weakened baseline.
+
+Refutation criteria, all from the same protocol: worse pooled RMSE/MAPE;
+losses in most spatial blocks (paired Wilcoxon, block bootstrap); and, the
+sharpest, **more spatial autocorrelation left in its out-of-fold residuals
+(Moran's I)** than the explicitly spatial models leave in theirs.
 
 ## Glossary of Brazilian terms
 
@@ -95,20 +117,79 @@ python pipeline/04_english_labels.py
 # 5. evaluation-protocol smoke test (trivial baseline through the full
 #    machinery: spatial-block CV, metrics, Moran's I) — no API credits used
 python -m src.protocol --data data/itbi_sp_2025_level_a.csv --smoke
+
+# 6. baselines on Level A (spatial-block CV; results/cv_*.json + oof_*.csv)
+python -m src.model_sar --estimator ols                 # OLS hedonic
+python -m src.model_sar                                 # SAR lag (GM_Lag)
+python -m src.model_xgb --seeds 42 43 44                # XGBoost + spatial features (~70 min, 2 vCPU)
+python -m src.model_xgb --no-lag --seeds 42 43 44       # ablation without the k-NN lag
+
+# 7. TabPFN-3.5, no explicit spatial modelling (needs an API key: export TABPFN_TOKEN=...)
+bash scripts/10_tabpfn_level_a.sh check                 # token, models, allowance, cost estimates (no quota)
+bash scripts/10_tabpfn_level_a.sh t0                    # zero-shot, + paired tests vs SAR / XGB / OLS
+bash scripts/10_tabpfn_level_a.sh t0-think              # thinking mode (medium)
 ```
 
-All seeds are fixed (42); no downloads or geocoding APIs are called at
-runtime.
+TabPFN-3.5 responses are cached under `results/tabpfn_cache/<label>/`, so
+the protocol can be re-run offline from the cached predictions.
+
+All seeds are fixed (42, plus 43/44 where a model is stochastic); no
+downloads or geocoding APIs are called at runtime.
+
+## Results so far — Level A (24,000 rows, leave-one-block-out CV, 10 blocks)
+
+Out-of-fold metrics on the 2025 base; ln = natural log of the unit price
+(R$/m²). Moran's I is computed on the out-of-fold residuals with a k-NN-8
+weights matrix (higher = more spatial structure left unexplained).
+
+| Model | RMSE (ln) | MAPE | R² (ln) | Moran's I of residuals |
+|---|---|---|---|---|
+| Median by property type (floor) | 0.497 | 42.1% | −0.04 | 0.446 |
+| OLS hedonic | 0.470 | 39.4% | 0.066 | 0.390 |
+| SAR lag, GM_Lag (ρ = 0.91) | 0.448 | 38.4% | 0.155 | 0.363 |
+| XGBoost + rotated coordinates (no lag; ablation) | 0.397 (3 seeds: 0.395–0.397) | 33.3% | 0.334 | 0.355 |
+| **XGBoost + rotated coordinates + k-NN-8 lag** | **0.385** (3 seeds: 0.384–0.387) | **32.3%** | **0.376** | 0.309 |
+| TabPFN-3.5, plain table (zero-shot) | *(next)* | | | |
+| TabPFN-3.5, plain table (thinking mode) | *(next)* | | | |
+
+Paired tests (`results/compare_*.json`, seed 42): SAR vs OLS improves the
+pooled RMSE by 0.023 but **not consistently** across folds (wins 6 of 10
+blocks, Wilcoxon p = 0.63, block-bootstrap 95% CI crosses zero). XGBoost with
+the spatial lag beats SAR in **10 of 10 blocks** (Wilcoxon p = 0.002; pooled
+ΔRMSE_ln = −0.063, block-bootstrap 95% CI [−0.086, −0.046]; ΔMAPE = −6.1 pp
+[−8.3, −4.1]). Within XGBoost, the explicit k-NN-8 lag is worth ΔRMSE_ln =
+−0.013 [−0.024, −0.004] (wins 7 of 10 blocks, Wilcoxon p = 0.027) and cuts
+the residual Moran's I from 0.355 to 0.309 — the price of *not* modelling
+space explicitly, for a strong tree learner that already sees the
+coordinates. Errors are much larger than in the Belo Horizonte listings
+study (R² 0.54 there) — expected with *declared* prices, three property
+types and fiscal-block-centroid coordinates — and every model still leaves
+substantial spatial autocorrelation in its residuals, which is the bar set
+for TabPFN-3.5.
+
+**Why XGBoost with spatial features rather than G-XGBoost.** Geographically
+weighted XGBoost (`geoxgboost`, one of the methods of the reference study)
+was piloted and timed (`src/pilot_gxgb_timing.py`,
+`results/gxgb_timing_pilot.json`): it fits one local model per training row
+and per bandwidth candidate over a dense n × n distance matrix, which at
+~20k rows per fold means ~0.5 h per bandwidth candidate, ~2 days for a
+modest grid, and 2.9 GB of distance matrix per fold. The scalable substitute
+keeps the idea of letting the learner see space: a fold-internal k-NN-8
+spatial-lag feature (leave-one-out for training rows), UTM coordinates plus
+30°/45°/60° rotations, the same hedonic block as SAR/OLS, and **nested**
+Optuna tuning (inner leave-one-block-out on the training blocks; the outer
+test block never touches tuning). Details in `src/model_xgb.py`.
 
 ## Repository layout
 
 ```
 data/raw/      original public files as downloaded (see DATA_NOTICE.md)
 data/          derived datasets and data reports
-pipeline/      data preparation scripts (01, 02, 03)
-src/           evaluation protocol and models (SAR, G-XGBoost, TabPFN-3.5)
+pipeline/      data preparation scripts (01–04)
+src/           evaluation protocol and models (protocol, SAR/OLS, XGBoost, TabPFN-3.5)
+scripts/       TabPFN-3.5 API runs (executed on a machine with API access; outputs cached in results/)
 notebooks/     exploratory analyses
-results/       metrics, figures and maps
+results/       metrics (cv_*.json), out-of-fold predictions (oof_*.csv), paired tests, figures
 app/           Streamlit demo ("Avaliador SP")
 paper/         reference paper (English translation forthcoming)
 ```
@@ -118,9 +199,12 @@ paper/         reference paper (English translation forthcoming)
 - [x] Data pipeline with documented filter chain and georeferencing
 - [x] Evaluation protocol (`src/protocol.py`): spatial-block CV, metrics,
       Moran's I, Wilcoxon + block bootstrap, multi-seed CIs
-- [ ] SAR baseline (`spreg`), G-XGBoost, TabPFN-3.5 ablation grid
-      (T0 base → T1 +spatial lag → T2 +high-cardinality categoricals →
-      T3 Thinking → T4 +text)
+- [x] Baselines on Level A: OLS, SAR lag (`spreg` GM_Lag), XGBoost with
+      spatial features (nested Optuna); G-XGBoost feasibility pilot
+- [ ] TabPFN-3.5 on the plain table: zero-shot and thinking mode, paired
+      against the explicitly spatial baselines (`src/model_tabpfn.py`);
+      optional extensions beyond the core claim: high-cardinality location
+      labels (neighbourhood, postcode), text fields
 - [ ] Out-of-time test 2025 → 2026; financed-only robustness run
 - [ ] 80% prediction intervals, NBR 14653-2 precision grades, traceable
       comparables, SHAP

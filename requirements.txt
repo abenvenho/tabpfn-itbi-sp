@@ -1,6 +1,8 @@
 # Data pipeline (pipeline/01–04) and evaluation protocol (src/protocol.py).
-# Model dependencies (spreg, geoxgboost, tabpfn-client, optuna, shap,
-# streamlit) are added and pinned together with the model wrappers.
+# Model dependencies are pinned together with their wrappers:
+#   spreg (src/model_sar.py), xgboost + optuna (src/model_xgb.py).
+# geoxgboost==1.1.0 is only needed for src/pilot_gxgb_timing.py (feasibility
+# pilot; not part of the reproduction path).
 pandas==3.0.2
 numpy==2.4.4
 scikit-learn==1.8.0
@@ -12,3 +14,6 @@ scipy==1.17.1
 libpysal==4.14.1
 esda==2.9.0
 spreg==1.9.0
+xgboost==3.0.0
+optuna==5.0.0
+tabpfn-client==0.6.0

@@ -24,3 +24,6 @@ data/english/itbi_sp_2025_train_en.csv
 
 # Logs and scratch
 *.log
+
+# Secrets (API keys are read from environment variables, never committed)
+.env

@@ -1,0 +1,9 @@
+{
+  "package": "geoxgboost 1.1.0 (optimize_bw, Adaptive kernel, spatial weights, n_splits=3)",
+  "pilot": {"subsample_rows": 200, "bandwidth_candidates": 1, "wall_s": 18.7, "s_per_spatial_unit": 0.093,
+            "xgb_params": {"n_estimators": 100, "max_depth": 3, "learning_rate": 0.1, "n_jobs": 1}},
+  "extrapolation": {"train_rows_per_fold": 19117, "hours_per_bandwidth_per_fold": 0.5,
+                     "days_for_10_bandwidths_x_10_folds": 2, "dense_distance_matrix_gb_per_fold": 2.9,
+                     "machine": "2 vCPU, 7 GB RAM"},
+  "decision": "Geographically weighted XGBoost as shipped (one local XGBoost + GridSearchCV per training row, dense n x n distance matrix) is not feasible at this scale; use a global XGBoost with fold-internal k-NN-8 spatial lag, rotated coordinates and nested Optuna tuning under spatial-block CV (src/model_xgb.py)."
+}

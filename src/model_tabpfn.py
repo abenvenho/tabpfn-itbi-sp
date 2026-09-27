@@ -1,0 +1,269 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+model_tabpfn.py — TabPFN-3.5 *without* explicit spatial modelling
+==================================================================
+The central hypothesis of this project, stated so that it can fail:
+
+    A tabular foundation model that receives only the property attributes
+    and the coordinates as two ordinary numeric columns — no spatial weights
+    matrix, no spatial lag, no rotated axes, no neighbourhood features —
+    predicts spatially correlated prices as well as, or better than,
+    specialised models that encode spatial dependence explicitly
+    (SAR lag with W and rho; XGBoost with a k-NN-8 lag, rotated coordinates
+    and nested tuning).
+
+The design is deliberately asymmetric *against* the hypothesis: the
+baselines keep every spatial advantage; TabPFN-3.5 gets the plain table.
+Refutation criteria, per the shared protocol (``src/protocol.py``):
+worse pooled RMSE_ln / MAPE, losses in most spatial blocks (paired
+Wilcoxon, block bootstrap), and — the sharpest one — more spatial
+autocorrelation left in the out-of-fold residuals (Moran's I).
+
+Feature set ("T0", the reference study's replica)
+--------------------------------------------------
+Raw columns, no transformations (TabPFN handles scale and non-linearity):
+built area, lot area, age, finish grade, distance to the nearest station,
+month index, property type (categorical), latitude, longitude. Exactly the
+information set of the SAR/OLS design matrix, minus the spatial machinery.
+
+Runs
+----
+* ``--thinking off``      zero-shot TabPFN-3.5 (the model as shipped)
+* ``--thinking medium|high``  thinking mode: the fit explores configurations
+  by internal validation on the training fold, optimising RMSE
+  (``thinking_metric="rmse"``). Main runs use **no** ``group_col`` (the model
+  sees nothing about the blocks); ``--group-col`` adds the spatial block as
+  the grouping column of the internal validation, a robustness variant only
+  (it is spatial information entering through the tuning, hence not the
+  main analysis).
+
+Every API response is cached under ``results/tabpfn_cache/<label>/`` —
+fitted-model records (``save_model``) and predictions per fold — so a
+configuration is paid for once and the protocol can be re-run offline.
+``--dry-run`` builds the features and prints the server's cost estimate
+(``estimate_cost``: only row/column counts are sent, no quota used).
+
+The API is not reachable from the development sandbox; these runs are
+executed on the author's machine (``scripts/10_tabpfn_level_a.sh``).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+from .protocol import BLOCK_COL, SEED, load_base, run_cv, compare_models
+
+TARGET = "ln_vu"
+MODEL_VERSION = "v3.5"
+
+T0_NUMERIC = ["area_construida_m2", "area_terreno_m2", "idade", "padrao_nivel",
+              "dist_estacao_m", "mes_idx", "lat", "lon"]
+T0_CATEGORICAL = ["tipo_imovel"]
+T0_FEATURES = T0_NUMERIC + T0_CATEGORICAL
+
+
+def t0_features(df: pd.DataFrame, group_col: str | None = None) -> pd.DataFrame:
+    """Plain feature table for TabPFN (raw columns, categorical as category)."""
+    X = pd.DataFrame(index=df.index)
+    for c in T0_NUMERIC:
+        X[c] = pd.to_numeric(df[c], errors="coerce").astype(float)
+    X["area_terreno_m2"] = X["area_terreno_m2"].fillna(0.0)
+    for c in T0_CATEGORICAL:
+        X[c] = df[c].astype("category")
+    if group_col:
+        X[group_col] = df[group_col].astype(int)
+    return X.reset_index(drop=True)
+
+
+# --------------------------------------------------------------------------
+# Model with per-fold cache
+# --------------------------------------------------------------------------
+class TabPFNT0Model:
+    """fit/predict for the protocol; every server call cached on disk."""
+
+    def __init__(self, cache_dir: Path, block: str, seed: int = SEED,
+                 thinking: str = "off", group_col: str | None = None,
+                 thinking_timeout_s: float = 2400.0,
+                 quantiles: list[float] | None = None, chunk: int = 5000):
+        self.cache_dir, self.block, self.seed = cache_dir, block, seed
+        self.thinking, self.group_col = thinking, group_col
+        self.timeout, self.quantiles, self.chunk = thinking_timeout_s, quantiles, chunk
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # cache paths -------------------------------------------------------
+    def _p(self, kind: str) -> Path:
+        return self.cache_dir / f"block{self.block}_seed{self.seed}_{kind}"
+
+    def _make(self):
+        from tabpfn_client import TabPFNRegressor
+        kw = dict(random_state=self.seed)
+        if self.thinking != "off":
+            kw.update(thinking_mode=True, thinking_effort=self.thinking,
+                      thinking_timeout_s=self.timeout, thinking_metric="rmse")
+            if self.group_col:
+                kw["group_col"] = self.group_col
+        return TabPFNRegressor.create_default_for_version(MODEL_VERSION, **kw)
+
+    def fit(self, train_df: pd.DataFrame):
+        self.n_train_ = len(train_df)
+        if self._p("pred_mean.npy").exists():
+            self.model_ = None                      # nothing to fit: cached
+            return self
+        rec = self._p("model.json")
+        from tabpfn_client import TabPFNRegressor
+        if rec.exists():
+            self.model_ = TabPFNRegressor.load_model(rec)
+            return self
+        X = t0_features(train_df, self.group_col)
+        y = train_df[TARGET].to_numpy(dtype=float)
+        t0 = time.time()
+        self.model_ = self._make().fit(X, y)
+        self.model_.save_model(rec)
+        meta = {"block": self.block, "seed": self.seed, "n_train": int(len(X)),
+                "thinking": self.thinking, "group_col": self.group_col,
+                "fit_s": round(time.time() - t0, 1)}
+        self._p("fit_meta.json").write_text(json.dumps(meta, indent=2))
+        print(f"  block {self.block}: fit {meta['fit_s']:.0f}s "
+              f"(thinking={self.thinking})", flush=True)
+        return self
+
+    def predict(self, test_df: pd.DataFrame) -> np.ndarray:
+        p = self._p("pred_mean.npy")
+        if p.exists():
+            return np.load(p)
+        X = t0_features(test_df, self.group_col)
+        out = []
+        for i in range(0, len(X), self.chunk):
+            out.append(np.asarray(self.model_.predict(X.iloc[i:i + self.chunk]),
+                                  dtype=float))
+        pred = np.concatenate(out)
+        np.save(p, pred)
+        if self.quantiles:
+            qs = []
+            for i in range(0, len(X), self.chunk):
+                q = self.model_.predict(X.iloc[i:i + self.chunk],
+                                        output_type="quantiles",
+                                        quantiles=self.quantiles)
+                qs.append(np.column_stack([np.asarray(a, dtype=float) for a in q]))
+            np.save(self._p("pred_quantiles.npy"), np.vstack(qs))
+            self._p("quantiles.json").write_text(json.dumps(self.quantiles))
+        return pred
+
+
+class TabPFNFactory:
+    """``factory(seed)`` for ``run_cv``; folds arrive in sorted block order."""
+
+    def __init__(self, cache_dir: Path, folds_order: list[int], **kw):
+        self.cache_dir, self.folds_order, self.kw = cache_dir, folds_order, kw
+        self.call = 0
+
+    def __call__(self, seed: int):
+        block = str(self.folds_order[self.call % len(self.folds_order)])
+        self.call += 1
+        return TabPFNT0Model(self.cache_dir, block, seed=seed, **self.kw)
+
+
+# --------------------------------------------------------------------------
+# CLI
+# --------------------------------------------------------------------------
+def main() -> None:
+    ap = argparse.ArgumentParser(description="TabPFN-3.5 (no explicit spatial modelling) through the protocol")
+    ap.add_argument("--data", default="data/itbi_sp_2025_level_a.csv")
+    ap.add_argument("--thinking", choices=["off", "medium", "high"], default="off")
+    ap.add_argument("--group-col", action="store_true",
+                    help="robustness variant: spatial block as thinking group_col")
+    ap.add_argument("--thinking-timeout-s", type=float, default=2400.0)
+    ap.add_argument("--seeds", type=int, nargs="+", default=[SEED])
+    ap.add_argument("--quantiles", type=float, nargs="*", default=None,
+                    help="also cache predictive quantiles, e.g. 0.1 0.25 0.5 0.75 0.9")
+    ap.add_argument("--chunk", type=int, default=5000, help="test rows per predict call")
+    ap.add_argument("--label", default=None)
+    ap.add_argument("--financed-only", action="store_true")
+    ap.add_argument("--dry-run", action="store_true",
+                    help="print features and the server's cost estimate; no fit")
+    ap.add_argument("--compare-with", nargs="*", default=[],
+                    help="labels of finished CV runs to compare against (Wilcoxon + block bootstrap)")
+    ap.add_argument("--out", default="results")
+    args = ap.parse_args()
+
+    df = load_base(args.data, financed_only=args.financed_only)
+    group_col = BLOCK_COL if args.group_col else None
+    label = args.label or ("tabpfn_t0"
+                           + ("" if args.thinking == "off" else f"_think_{args.thinking}")
+                           + ("_grp" if group_col else "") + "_"
+                           + Path(args.data).stem.replace("itbi_sp_", "")
+                           + ("_fin" if args.financed_only else ""))
+    folds_order = sorted(df[BLOCK_COL].unique().tolist())
+    n_test_max = int(df[BLOCK_COL].value_counts().max())
+    print(f"TabPFN-{MODEL_VERSION} T0 | thinking={args.thinking} group_col={group_col} "
+          f"| {len(df):,} rows, {len(folds_order)} blocks -> label '{label}'", flush=True)
+    print(f"features ({len(T0_FEATURES)}): {T0_FEATURES}")
+
+    if args.dry_run:
+        X = t0_features(df.iloc[:100])
+        print(X.dtypes.to_string())
+        if not os.environ.get("TABPFN_TOKEN"):
+            print("TABPFN_TOKEN not set: skipping cost estimate"); return
+        from tabpfn_client import estimate_cost, get_api_usage
+        Xtr = np.zeros((len(df) - n_test_max, len(T0_FEATURES)))
+        Xte = np.zeros((n_test_max, len(T0_FEATURES)))
+        r = estimate_cost(Xtr, Xte, model_version=MODEL_VERSION, operation="predict")
+        print(f"predict, largest fold ({Xtr.shape[0]:,} x {Xte.shape[0]:,}): "
+              f"{r.estimated_cost} ({r.pricing_version}) -> x{len(folds_order)} folds x{len(args.seeds)} seeds")
+        if args.thinking != "off":
+            r = estimate_cost(Xtr, None, model_version=MODEL_VERSION,
+                              operation="thinking_fit", thinking_effort=args.thinking)
+            print(f"thinking_fit ({args.thinking}): {r.estimated_cost} per fold "
+                  f"-> x{len(folds_order)} folds x{len(args.seeds)} seeds")
+        print(get_api_usage())
+        return
+
+    if not os.environ.get("TABPFN_TOKEN"):
+        sys.exit("TABPFN_TOKEN is not set (export TABPFN_TOKEN=... ); "
+                 "see scripts/00_check_api.py")
+
+    out_dir = Path(args.out)
+    cache_dir = out_dir / "tabpfn_cache" / label
+    factory = TabPFNFactory(cache_dir, folds_order, thinking=args.thinking,
+                            group_col=group_col,
+                            thinking_timeout_s=args.thinking_timeout_s,
+                            quantiles=args.quantiles, chunk=args.chunk)
+    t0 = time.time()
+    res = run_cv(factory, df, label=label, seeds=tuple(args.seeds), out_dir=out_dir)
+    s0 = str(args.seeds[0])
+    pooled, moran = res["per_seed"][s0]["pooled"], res["per_seed"][s0]["moran_oof"]
+    print(f"CV done in {time.time() - t0:,.0f}s | RMSE_ln={pooled['rmse_ln']:.4f} "
+          f"MAE_ln={pooled['mae_ln']:.4f} MAPE={pooled['mape_pct']:.1f}% "
+          f"R2_ln={pooled['r2_ln']:.3f} | Moran I={moran['I']:.3f} (z={moran['z_norm']:.1f})")
+    if "seed_summary" in res:
+        ss = res["seed_summary"]["rmse_ln"]
+        print(f"RMSE_ln over seeds: {ss['mean']:.4f} CI95 [{ss['ci95'][0]:.4f}, {ss['ci95'][1]:.4f}]")
+
+    meta = json.loads((out_dir / f"cv_{label}.json").read_text())
+    meta["model"] = {"family": "TabPFN", "version": MODEL_VERSION,
+                     "thinking": args.thinking, "group_col": group_col,
+                     "thinking_metric": "rmse" if args.thinking != "off" else None,
+                     "features": T0_FEATURES, "explicit_spatial_modelling": False}
+    (out_dir / f"cv_{label}.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
+    for other in args.compare_with:
+        for metric in ("rmse_ln", "mape_pct"):
+            r = compare_models(label, other, df, seed=args.seeds[0], metric=metric,
+                               out_dir=out_dir)
+            w, bb = r["wilcoxon"], r["block_bootstrap"]
+            print(f"{label} vs {other} [{metric}]: per-fold mean diff {w['mean_diff']:+.4f} "
+                  f"(Wilcoxon p={w['p_value']:.3f}) | pooled {bb['diff']:+.4f} "
+                  f"CI95 [{bb['ci95'][0]:+.4f}, {bb['ci95'][1]:+.4f}]")
+
+
+if __name__ == "__main__":
+    main()

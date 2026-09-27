@@ -1,0 +1,22 @@
+{
+  "a": "xgb_nolag_2025_level_a",
+  "b": "sar_gm_2025_level_a",
+  "metric": "rmse_ln",
+  "seed": 42,
+  "wilcoxon": {
+    "n_folds": 10,
+    "statistic": 0.0,
+    "p_value": 0.001953125,
+    "mean_diff": -0.05625924438678402
+  },
+  "block_bootstrap": {
+    "metric": "rmse_ln",
+    "n_boot": 2000,
+    "diff": -0.05033581607001225,
+    "ci95": [
+      -0.07523996317094438,
+      -0.032803075392645084
+    ],
+    "p_boot_two_sided": 0.0
+  }
+}
