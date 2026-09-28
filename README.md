@@ -350,7 +350,7 @@ paper/         reference paper (English translation forthcoming)
 - [ ] SHAP on a small sample of 2026 properties (`src/shap_tabpfn.py`; script
       and samples in place, API run pending)
 - [ ] Financed-only robustness run, both legs (`scripts/40_financed_robustness.sh`;
-      OLS and SAR done, XGBoost and TabPFN runs pending); block-grouped thinking
+      OLS, SAR and XGBoost+lag done, TabPFN run pending); block-grouped thinking
 - [ ] Optional extensions beyond the core claim: high-cardinality location
       labels, text fields
 - [ ] Streamlit app and 2–3 min video
