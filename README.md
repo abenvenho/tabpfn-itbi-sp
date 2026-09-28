@@ -320,6 +320,85 @@ spatial-lag feature (leave-one-out for training rows), UTM coordinates plus
 Optuna tuning (inner leave-one-block-out on the training blocks; the outer
 test block never touches tuning). Details in `src/model_xgb.py`.
 
+## Explaining a valuation — SHAP on a small sample
+
+An appraiser who signs a valuation has to say *why*: which attributes moved
+this property away from the typical unit value, and by how much. The model
+is served through an API, so the explanation is model-agnostic —
+permutation SHAP (`shap.PermutationExplainer`, independent background) —
+and deliberately small: the zero-shot model fitted on the 2025 Level A base
+for the out-of-time test is **reloaded from its cached record (no refit)**
+and explains **50 transactions of 2026** it has never seen
+(`data/shap_subsample.csv`, stratified by property type across all ten
+blocks) against a background of 20 training rows
+(`data/shap_background.csv`). One permutation forward and backward per
+row; 27,217 predicted rows in total, every API call cached under
+`results/shap/cache/` so the attributions are reproducible offline
+(`scripts/30_tabpfn_shap.sh`, `src/shap_tabpfn.py`). Values are in ln
+units: `exp(SHAP)` is the multiplicative effect on the unit value.
+
+![Mean absolute SHAP per feature, by property type](results/figures/fig6_shap_importance.png)
+
+*Figure 6. Mean |SHAP| per feature (ln units), by property type.*
+
+![SHAP values per feature, coloured by feature value](results/figures/fig7_shap_beeswarm.png)
+
+*Figure 7. Direction of the effects: one point per explained property.*
+
+![One valuation explained, from the base value to the prediction](results/figures/fig8_shap_waterfall.png)
+
+*Figure 8. One valuation as an appraiser would read it: the base value
+(mean prediction over the background) and each attribute's contribution,
+in ln and as a multiplier on R$/m².*
+
+Mean |SHAP| over the 50 properties, largest first: longitude 0.184
+(a typical ×1.20 on the unit value), latitude 0.143 (×1.15), property type
+0.127, built area 0.112, age 0.082, lot area 0.065, distance to the nearest
+station 0.047, finish grade 0.036, month index 0.015. The two raw
+coordinates are the strongest inputs — combined mean |SHAP| 0.35 for
+apartments and houses, 0.23 for commercial units — which is the central
+hypothesis seen from inside the model: the plain table carries the spatial
+signal that the baselines have to encode with a weights matrix. Directions
+are the ones an appraiser expects (Figure 7): older buildings and longer
+distances to a station pull the unit value down, higher finish grades push
+it up, and larger built areas lower the price per square metre. RMSE_ln of
+the reconstructed predictions (base value + contributions) on the sample is
+0.296, in line with the out-of-time error of the same model. Per-row values
+are in `results/shap/shap_values_tabpfn_t0_level_a.csv`.
+
+## Robustness — financed transactions only
+
+The under-declaration filter (see *Data*) removes cash deals declared at
+exactly the reference value; financed deals carry a bank appraisal and are
+the cleanest price signal in the base. Both legs of the protocol were
+re-run on that subset alone — **7,211 of the 24,000 Level A rows** for
+the block CV, and the same 7,211 rows fitted once and evaluated on the
+**20,052 financed transactions of 2026** — with the same folds, tests and
+metrics (`scripts/40_financed_robustness.sh`; results `results/*_fin*`).
+
+| Model | CV RMSE (ln) | CV MAPE | CV Moran's I | 2026 RMSE (ln) | 2026 MAPE | 2026 bias | 2026 Moran's I |
+|---|---|---|---|---|---|---|---|
+| OLS hedonic | 0.354 | 28.5% | 0.343 | 0.343 | 26.5% | +0.044 | 0.491 |
+| SAR lag, GM_Lag | 0.344 | 28.1% | 0.342 | 0.286 | 22.0% | +0.035 | 0.297 |
+| XGBoost + rotated coordinates + k-NN-8 lag | 0.286 | 23.0% | 0.327 | 0.221 | 16.7% | +0.024 | 0.160 |
+| **TabPFN-3.5, plain table, zero-shot** | 0.269 | 21.1% | 0.279 | 0.207 | 15.3% | +0.029 | 0.143 |
+
+Errors are lower for every model than on the full base (cleaner prices)
+and the ranking is unchanged — but the plain-table model does better here
+than in the main analysis, on every criterion. Block CV: TabPFN vs XGBoost
+with the explicit lag, ΔRMSE_ln = −0.017 [−0.032, −0.003], Wilcoxon
+p = 0.049, ΔMAPE = −1.9 pp, better in 8 of 10 blocks (a tie on the full
+Level A); vs SAR, ΔRMSE_ln = −0.074 [−0.102, −0.050], p = 0.002, 10 of 10.
+Out-of-time 2026: vs XGBoost, ΔRMSE_ln = −0.013 [−0.017, −0.010],
+p = 0.002, ΔMAPE = −1.4 pp, 10 of 10 blocks; vs SAR, ΔRMSE_ln = −0.079
+[−0.091, −0.070], 10 of 10. On the residual criterion the partial
+refutation of the Level A block CV **does not reappear**: on financed deals
+the plain-table TabPFN leaves less spatial structure than XGBoost with the
+explicit lag in both legs (Moran's I 0.279 vs 0.327 in the block CV, 0.143
+vs 0.160 on 2026). Nothing in the headline results depends on the cash
+deals kept by the under-declaration filter; if anything, the noisier cash
+prices are where the explicitly spatial learner holds its own.
+
 ## Repository layout
 
 ```
@@ -347,10 +426,9 @@ paper/         reference paper (English translation forthcoming)
 - [x] Out-of-time test 2025 → 2026 (Level A training)
 - [x] Full 2025 base (82k) out-of-time, all four models
 - [x] Figures from the versioned results (`src/make_figures.py`)
-- [ ] SHAP on a small sample of 2026 properties (`src/shap_tabpfn.py`; script
-      and samples in place, API run pending)
-- [ ] Financed-only robustness run, both legs (`scripts/40_financed_robustness.sh`;
-      OLS, SAR and XGBoost+lag done, TabPFN run pending); block-grouped thinking
+- [x] SHAP on a small sample of 2026 properties (`src/shap_tabpfn.py`)
+- [x] Financed-only robustness run, both legs (`scripts/40_financed_robustness.sh`)
+- [ ] Block-grouped thinking (robustness)
 - [ ] Optional extensions beyond the core claim: high-cardinality location
       labels, text fields
 - [ ] Streamlit app and 2–3 min video

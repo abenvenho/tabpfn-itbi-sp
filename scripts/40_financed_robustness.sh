@@ -40,7 +40,7 @@ case "${1:-}" in
       2>&1 | tee -a results/tabpfn_fin_run.log ;;
   compare)
     for b in sar_gm_level_a_fin xgb_lag_level_a_fin ols_level_a_fin; do
-      python -m src.out_of_time --financed-only --compare tabpfn_t0_level_a_fin $b
+      python3 -m src.out_of_time --financed-only --compare tabpfn_t0_level_a_fin $b
     done ;;
   *)
     echo "usage: $0 {baselines|tabpfn|compare}" >&2; exit 2 ;;

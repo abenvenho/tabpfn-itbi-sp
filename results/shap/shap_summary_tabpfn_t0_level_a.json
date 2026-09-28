@@ -1,0 +1,69 @@
+{
+  "label": "tabpfn_t0_level_a",
+  "model_record": "results/tabpfn_cache/oot_tabpfn_t0_level_a/blockall_seed42_model.json",
+  "n_explained": 50,
+  "n_background": 20,
+  "n_permutations": 1,
+  "seed": 42,
+  "features": [
+    "area_construida_m2",
+    "area_terreno_m2",
+    "idade",
+    "padrao_nivel",
+    "dist_estacao_m",
+    "mes_idx",
+    "lat",
+    "lon",
+    "tipo_imovel"
+  ],
+  "target": "ln_vu",
+  "explainer": "shap.PermutationExplainer, Independent masker",
+  "predicted_rows": 27217,
+  "mean_abs_shap_ln": {
+    "lon": 0.18367012500762953,
+    "lat": 0.1425812003612519,
+    "tipo_imovel": 0.12650969934463505,
+    "area_construida_m2": 0.11164824724197395,
+    "idade": 0.08200698852539062,
+    "area_terreno_m2": 0.06511588072776794,
+    "dist_estacao_m": 0.04697245812416076,
+    "padrao_nivel": 0.03552609801292413,
+    "mes_idx": 0.01478389978408817
+  },
+  "mean_abs_shap_ln_by_type": {
+    "apartment": {
+      "area_construida_m2": 0.10354734897613527,
+      "area_terreno_m2": 0.06220609283447262,
+      "idade": 0.09555544471740722,
+      "padrao_nivel": 0.031456222534179595,
+      "dist_estacao_m": 0.056885205268859734,
+      "mes_idx": 0.01206326913833614,
+      "lat": 0.1484012126922607,
+      "lon": 0.20271566057205223,
+      "tipo_imovel": 0.05992605495452885
+    },
+    "commercial": {
+      "area_construida_m2": 0.06510384321212777,
+      "area_terreno_m2": 0.10196191549301155,
+      "idade": 0.07371807336807268,
+      "padrao_nivel": 0.03722802996635446,
+      "dist_estacao_m": 0.033656029701232895,
+      "mes_idx": 0.017609355449676477,
+      "lat": 0.11758734941482576,
+      "lon": 0.11358196377754207,
+      "tipo_imovel": 0.15922123908996583
+    },
+    "house": {
+      "area_construida_m2": 0.1561793470382692,
+      "area_terreno_m2": 0.04540150403976441,
+      "idade": 0.06495217164357493,
+      "padrao_nivel": 0.0411746025085448,
+      "dist_estacao_m": 0.03932883183161439,
+      "mes_idx": 0.017434647083282684,
+      "lat": 0.14954374710718799,
+      "lon": 0.19865300655365015,
+      "tipo_imovel": 0.21567474683125812
+    }
+  },
+  "rmse_ln_on_subsample": 0.29587573793710764
+}

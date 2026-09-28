@@ -361,13 +361,17 @@ def fig8_shap_waterfall(label: str, sql: str | None = None) -> None:
     fig, ax = plt.subplots(figsize=(7.6, 4.6))
     base, run = r["base_value_ln"], r["base_value_ln"]
     ys = np.arange(len(contrib))
+    cum = [base]
     for i, (f, v) in enumerate(contrib.items()):
         col = C["pos"] if v > 0 else C["neg"]
         ax.barh(i, v, left=run, color=col, height=0.6, edgecolor="white")
-        ax.annotate(f"{v:+.3f} (×{np.exp(v):.2f})", (run + v, i),
-                    xytext=(6 if v > 0 else -6, 0), textcoords="offset points",
-                    ha="left" if v > 0 else "right", va="center", fontsize=8, color=C["text"])
+        ax.annotate(f"{v:+.3f} (×{np.exp(v):.2f})", (max(run, run + v), i), xytext=(6, 0),
+                    textcoords="offset points", ha="left", va="center", fontsize=8,
+                    color=C["text"])
         run += v
+        cum.append(run)
+    lo, hi = min(cum), max(cum)
+    ax.set_xlim(lo - 0.15 * (hi - lo), hi + 0.35 * (hi - lo))
     ax.axvline(base, color=C["text2"], lw=0.8, ls="--",
                label=f"base value (mean over the background) = {base:.3f}")
     ax.axvline(r["yhat_ln"], color=C["tabpfn_t0"], lw=1.2,
@@ -379,7 +383,6 @@ def fig8_shap_waterfall(label: str, sql: str | None = None) -> None:
     ax.set_title(f"One valuation explained — {r['tipo_imovel']}, SQL {sql}, block {r['bloco']}\n"
                  f"base R$ {np.exp(base):,.0f}/m² → predicted R$ {np.exp(r['yhat_ln']):,.0f}/m²  "
                  f"(declared: R$ {np.exp(obs):,.0f}/m²)", loc="left")
-    ax.margins(x=0.12)
     ax.legend(loc="upper center", ncol=2, bbox_to_anchor=(0.5, -0.12))
     save(fig, "fig8_shap_waterfall.png")
 
