@@ -1,0 +1,12 @@
+# Dependencies of the Streamlit app only (app/app.py). Streamlit Community Cloud
+# picks this file up because it sits next to the main module.
+#
+# The first four are all the app needs to run offline on the versioned results.
+# tabpfn-client is optional: it switches on the "Appraise a property" tab when a
+# TABPFN_TOKEN is available. It pins pandas<=2.3.3, which is why pandas is not
+# pinned to 3.x here (the app reads CSVs only and runs on either).
+streamlit>=1.38
+plotly>=5.24
+pandas>=2.2,<3.1
+numpy>=1.26
+tabpfn-client==0.6.0

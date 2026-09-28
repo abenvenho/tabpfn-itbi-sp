@@ -1,0 +1,104 @@
+\begin{thebibliography}{14}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Akiba et~al.(2019)Akiba, Sano, Yanase, Ohta, and
+  Koyama]{akiba2019optuna}
+Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori Koyama.
+\newblock Optuna: A next-generation hyperparameter optimization framework.
+\newblock In \emph{Proceedings of the 25th ACM SIGKDD International Conference
+  on Knowledge Discovery and Data Mining}, pages 2623--2631, 2019.
+
+\bibitem[Anselin(1988)]{anselin1988}
+Luc Anselin.
+\newblock \emph{Spatial Econometrics: Methods and Models}.
+\newblock Kluwer Academic Publishers, Dordrecht, 1988.
+
+\bibitem[Benvenho(2026)]{benvenho2026cead}
+Agnaldo~Calvi Benvenho.
+\newblock M{\'e}todos n{\~a}o lineares versus regress{\~a}o espacial na
+  avalia{\c{c}}{\~a}o de apartamentos: um estudo comparativo em {Belo
+  Horizonte}.
+\newblock \emph{Anais do CEAD 2026}, 2026.
+\newblock CHECK: full congress name, place, pages, award.
+
+\bibitem[Chen and Guestrin(2016)]{chen2016xgboost}
+Tianqi Chen and Carlos Guestrin.
+\newblock {XGBoost}: A scalable tree boosting system.
+\newblock In \emph{Proceedings of the 22nd ACM SIGKDD International Conference
+  on Knowledge Discovery and Data Mining}, pages 785--794, 2016.
+
+\bibitem[Hollmann et~al.(2023)Hollmann, M{\"u}ller, Eggensperger, and
+  Hutter]{hollmann2023tabpfn}
+Noah Hollmann, Samuel M{\"u}ller, Katharina Eggensperger, and Frank Hutter.
+\newblock {TabPFN}: A transformer that solves small tabular classification
+  problems in a second.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2023.
+
+\bibitem[Hollmann et~al.(2025)Hollmann, M{\"u}ller, Purucker, Krishnakumar,
+  K{\"o}rfer, Hoo, Schirrmeister, and Hutter]{hollmann2025nature}
+Noah Hollmann, Samuel M{\"u}ller, Lennart Purucker, Arjun Krishnakumar, Max
+  K{\"o}rfer, Shi~Bin Hoo, Robin~Tibor Schirrmeister, and Frank Hutter.
+\newblock Accurate predictions on small data with a tabular foundation model.
+\newblock \emph{Nature}, 637:\penalty0 319--326, 2025.
+\newblock \doi{10.1038/s41586-024-08328-6}.
+
+\bibitem[Kelejian and Prucha(1998)]{kelejian1998}
+Harry~H. Kelejian and Ingmar~R. Prucha.
+\newblock A generalized spatial two-stage least squares procedure for
+  estimating a spatial autoregressive model with autoregressive disturbances.
+\newblock \emph{The Journal of Real Estate Finance and Economics}, 17\penalty0
+  (1):\penalty0 99--121, 1998.
+
+\bibitem[LeSage and Pace(2009)]{lesage2009}
+James LeSage and R.~Kelley Pace.
+\newblock \emph{Introduction to Spatial Econometrics}.
+\newblock Chapman and Hall/CRC, 2009.
+
+\bibitem[Lundberg and Lee(2017)]{lundberg2017shap}
+Scott~M. Lundberg and Su-In Lee.
+\newblock A unified approach to interpreting model predictions.
+\newblock In \emph{Advances in Neural Information Processing Systems 30}, pages
+  4765--4774, 2017.
+
+\bibitem[Meyer and Pebesma(2021)]{meyer2022}
+Hanna Meyer and Edzer Pebesma.
+\newblock Predicting into unknown space? {Estimating} the area of applicability
+  of spatial prediction models.
+\newblock \emph{Methods in Ecology and Evolution}, 12\penalty0 (9):\penalty0
+  1620--1633, 2021.
+
+\bibitem[Moran(1950)]{moran1950}
+P.~A.~P. Moran.
+\newblock Notes on continuous stochastic phenomena.
+\newblock \emph{Biometrika}, 37\penalty0 (1/2):\penalty0 17--23, 1950.
+
+\bibitem[{Prior Labs Team}(2026)]{priorlabs2026tabpfn3}
+{Prior Labs Team}.
+\newblock {TabPFN-3}: Technical report.
+\newblock Technical report, Prior Labs, 2026.
+\newblock arXiv:2605.13986. CHECK: add the TabPFN-3.5 release note or report if
+  one exists.
+
+\bibitem[Rey and Anselin(2007)]{rey2010pysal}
+Sergio~J. Rey and Luc Anselin.
+\newblock {PySAL}: A {Python} library of spatial analytical methods.
+\newblock \emph{The Review of Regional Studies}, 37\penalty0 (1):\penalty0
+  5--27, 2007.
+
+\bibitem[Roberts et~al.(2017)Roberts, Bahn, Ciuti, Boyce, Elith,
+  Guillera-Arroita, Hauenstein, Lahoz-Monfort, Schr{\"o}der, Thuiller, Warton,
+  Wintle, Hartig, and Dormann]{roberts2017}
+David~R. Roberts, Volker Bahn, Simone Ciuti, Mark~S. Boyce, Jane Elith,
+  Gurutzeta Guillera-Arroita, Severin Hauenstein, Jos{\'e}~J. Lahoz-Monfort,
+  Boris Schr{\"o}der, Wilfried Thuiller, David~I. Warton, Brendan~A. Wintle,
+  Florian Hartig, and Carsten~F. Dormann.
+\newblock Cross-validation strategies for data with temporal, spatial,
+  hierarchical, or phylogenetic structure.
+\newblock \emph{Ecography}, 40\penalty0 (8):\penalty0 913--929, 2017.
+
+\end{thebibliography}

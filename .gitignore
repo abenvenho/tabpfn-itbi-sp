@@ -35,3 +35,9 @@ results/shap/cache/*_smoke/
 
 # Local credential notes (never committed)
 TOKEN*
+
+# LaTeX build files (paper/main.bbl and main.pdf are kept)
+paper/*.aux
+paper/*.out
+paper/*.blg
+paper/*.synctex.gz

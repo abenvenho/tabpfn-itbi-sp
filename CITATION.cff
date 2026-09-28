@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software or dataset, please cite it as below."
-title: "Mass Appraisal of São Paulo Real Estate with TabPFN-3.5"
+title: "Location, location, location: TabPFN-3.5 vs spatial models on São Paulo ITBI transactions"
 type: software
 authors:
   - family-names: "Benvenho"
@@ -19,12 +19,14 @@ keywords:
   - ITBI
   - "São Paulo"
 abstract: >-
-  Spatial machine-learning comparison (SAR, G-XGBoost, TabPFN-3.5) for mass
-  appraisal on 82,187 actual transaction prices from the São Paulo
-  real-estate transfer tax (ITBI), with spatial-block cross-validation,
-  out-of-time testing on 2026 transactions, prediction intervals graded
-  under the Brazilian appraisal standard NBR 14653-2, and traceable
-  comparables. Prior Labs TabPFN-3.5 Hackathon entry.
+  Does a tabular foundation model need spatial features? TabPFN-3.5 with the
+  plain table (coordinates as two numeric columns, no spatial modelling) is
+  compared with OLS, a SAR lag model and XGBoost with spatial features on
+  82,187 declared transaction prices from the São Paulo real-estate transfer
+  tax (ITBI), under spatial-block cross-validation and an out-of-time test
+  on 47,810 transactions of 2026, with pre-registered refutation criteria
+  including residual Moran's I. Includes a Streamlit app and permutation
+  SHAP. Prior Labs TabPFN-3.5 Hackathon entry.
 references:
   - type: article
     title: >-
