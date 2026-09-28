@@ -83,7 +83,7 @@ English-labelled convenience copies are provided under `data/english/`.
 | `data/raw/quadra_fiscal_p*.gpkg` | 64,223 fiscal-block polygons (GeoSampa WFS, EPSG:31983) |
 | `data/raw/estacao_metro.geojson`, `estacao_trem.geojson` | 203 subway and commuter-rail stations |
 | `data/fiscal_block_centroids.csv`, `data/fiscal_block_lookup.csv` | derived block centroids (pipeline step 01) |
-| `data/itbi_sp_2025_train.csv` | cleaned 2025 training base (82,187 rows) |
+| `data/itbi_sp_2025_train.csv.gz` | cleaned 2025 training base (82,187 rows; gzipped, read directly by pandas) |
 | `data/itbi_sp_2026_test.csv` | cleaned 2026 out-of-time test base (47,810 rows) |
 | `data/itbi_sp_2025_level_a.csv` | stratified 24,000-row sample for the 3-model comparison |
 | `data/english/*_en.csv` | same datasets with English column headers (convenience copies — **not** the originals; see DATA_NOTICE.md) + `column_mapping.csv` |
@@ -144,6 +144,16 @@ Python 3.14 and the baselines on Linux with Python 3.11.
 
 All seeds are fixed (42, plus 43/44 where a model is stochastic); no
 downloads or geocoding APIs are called at runtime.
+
+**Clean-clone check (2026-09-28).** The steps above that need no API key
+were run from a fresh `git clone` on Linux/Python 3.11: `pip install -r
+requirements.txt`, then step 2 rebuilt the three bases from the raw
+workbooks and they came out **byte-identical** to the versioned files
+(82,187 / 47,810 / 24,000 rows; `filter_report.md` and
+`data_dictionary.md` identical too), steps 3 and 4 reproduced their
+reports, the step-5 smoke test returned the documented numbers
+(RMSE_ln 0.4971, Moran's I 0.446) and the OLS baseline of step 6
+regenerated `results/cv_ols_2025_level_a.json` byte-identically.
 
 ## Results so far — Level A (24,000 rows, leave-one-block-out CV, 10 blocks)
 

@@ -34,9 +34,27 @@ OUT = ROOT / "data" / "underdeclaration_report.md"
 TYPES = ["apartment", "house", "commercial"]
 
 
+def resolve(path: Path) -> Path:
+    """Accept either the plain CSV or the gzipped copy.
+
+    The repository versions data/itbi_sp_2025_train.csv.gz; running
+    pipeline/02 first writes the uncompressed file next to it. Either is
+    fine here, so this script also works on a fresh clone without
+    re-running the cleaning step.
+    """
+    if path.exists():
+        return path
+    gz = path.with_suffix(path.suffix + ".gz")
+    if gz.exists():
+        return gz
+    raise FileNotFoundError(f"neither {path} nor {gz} found — "
+                            f"run pipeline/02_itbi_cleaning.py first")
+
+
 def load(path: Path) -> pd.DataFrame:
-    df = pd.read_csv(path, dtype={"sql": str, "cep": str, "setor": str,
-                                  "setor_quadra": str, "padrao_iptu": str})
+    df = pd.read_csv(resolve(path),
+                     dtype={"sql": str, "cep": str, "setor": str,
+                            "setor_quadra": str, "padrao_iptu": str})
     df["financiado"] = df["financiado"].astype(bool)
     return df
 

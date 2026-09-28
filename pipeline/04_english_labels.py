@@ -91,6 +91,15 @@ def main() -> None:
 
     for src_name, dst_name in FILES.items():
         src = ROOT / "data" / src_name
+        if not src.exists():
+            # The repository versions the gzipped copy of the large training
+            # base; pipeline/02 writes the uncompressed one next to it.
+            gz = src.with_suffix(src.suffix + ".gz")
+            if not gz.exists():
+                raise FileNotFoundError(
+                    f"neither {src} nor {gz} found — "
+                    f"run pipeline/02_itbi_cleaning.py first")
+            src = gz
         df = pd.read_csv(src, dtype={"sql": str, "cep": str, "setor": str,
                                      "setor_quadra": str, "padrao_iptu": str,
                                      "padrao_tipo": str})
