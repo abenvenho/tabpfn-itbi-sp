@@ -28,3 +28,10 @@ data/english/itbi_sp_2025_train_en.csv
 
 # Secrets (API keys are read from environment variables, never committed)
 .env
+
+# SHAP pipeline test outputs (local mock model, not results)
+results/shap/*_smoke*
+results/shap/cache/*_smoke/
+
+# Local credential notes (never committed)
+TOKEN*

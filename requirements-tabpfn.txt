@@ -10,3 +10,4 @@ shapely==2.1.2
 libpysal==4.14.1
 esda==2.9.0
 tabpfn-client==0.6.0
+shap==0.51.0

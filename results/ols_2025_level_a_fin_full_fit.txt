@@ -1,0 +1,13 @@
+OLS hedonic — full-sample coefficients
+n = 7,211
+
+               const   10.091138
+       ln_built_area  -0.190415
+       ln1p_lot_area  -0.007402
+                 age  -0.015705
+              age_sq   0.000221
+        finish_grade   0.133082
+   ln1p_dist_station  -0.114088
+         month_index  -0.000542
+             d_house   0.097592
+        d_commercial  -0.232840

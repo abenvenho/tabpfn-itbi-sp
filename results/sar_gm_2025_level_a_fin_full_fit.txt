@@ -1,0 +1,52 @@
+REGRESSION RESULTS
+------------------
+
+SUMMARY OF OUTPUT: SPATIAL TWO STAGE LEAST SQUARES
+------------------------------------------------------------------------------------
+Data set            :     unknown
+Weights matrix      :     unknown
+Dependent Variable  :       ln_vu                Number of Observations:        7211
+Mean dependent var  :      8.4544                Number of Variables   :          11
+S.D. dependent var  :      0.3869                Degrees of Freedom    :        7200
+Pseudo R-squared    :      0.4129
+Spatial Pseudo R-squared:  0.0150
+
+------------------------------------------------------------------------------------
+            Variable     Coefficient       Std.Error     z-Statistic     Probability
+------------------------------------------------------------------------------------
+            CONSTANT         2.32605         0.31785         7.31811         0.00000
+       ln_built_area        -0.19972         0.00887       -22.50726         0.00000
+       ln1p_lot_area         0.01075         0.00317         3.38921         0.00070
+                 age        -0.01090         0.00072       -15.13424         0.00000
+              age_sq         0.00014         0.00001        12.35377         0.00000
+        finish_grade         0.05493         0.00781         7.03413         0.00000
+   ln1p_dist_station        -0.02842         0.00582        -4.87957         0.00000
+         month_index         0.00032         0.00098         0.32279         0.74686
+             d_house         0.18194         0.01182        15.38615         0.00000
+        d_commercial        -0.18943         0.01886       -10.04510         0.00000
+             W_ln_vu         0.84681         0.03424        24.73232         0.00000
+------------------------------------------------------------------------------------
+Instrumented: W_ln_vu
+Instruments: W2_age, W2_age_sq, W2_d_commercial, W2_d_house,
+             W2_finish_grade, W2_ln1p_dist_station, W2_ln1p_lot_area,
+             W2_ln_built_area, W2_month_index, W_age, W_age_sq,
+             W_d_commercial, W_d_house, W_finish_grade, W_ln1p_dist_station,
+             W_ln1p_lot_area, W_ln_built_area, W_month_index
+
+DIAGNOSTICS FOR SPATIAL DEPENDENCE
+TEST                              DF         VALUE           PROB
+Anselin-Kelejian Test             1          7.576           0.0059
+
+SPATIAL LAG MODEL IMPACTS
+Impacts computed using the 'simple' method.
+            Variable         Direct        Indirect          Total
+       ln_built_area        -0.1997         -1.1040         -1.3038
+       ln1p_lot_area         0.0108          0.0594          0.0702
+                 age        -0.0109         -0.0602         -0.0711
+              age_sq         0.0001          0.0008          0.0009
+        finish_grade         0.0549          0.3036          0.3586
+   ln1p_dist_station        -0.0284         -0.1571         -0.1855
+         month_index         0.0003          0.0017          0.0021
+             d_house         0.1819          1.0058          1.1877
+        d_commercial        -0.1894         -1.0472         -1.2366
+================================ END OF REPORT =====================================

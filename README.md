@@ -134,6 +134,18 @@ python -m src.out_of_time --model ols --train level_a
 python -m src.out_of_time --model sar --train level_a
 python -m src.out_of_time --model xgb --train level_a --seeds 42 43 44
 bash scripts/20_tabpfn_out_of_time.sh t0 && bash scripts/20_tabpfn_out_of_time.sh compare
+
+# 9. figures from the versioned results (results/figures/; no model is re-run)
+python -m src.make_figures
+
+# 10. SHAP on a small sample of 2026 properties (model reloaded from the cache, no refit; API)
+bash scripts/30_tabpfn_shap.sh smoke                    # pipeline test with a local mock model, no API
+bash scripts/30_tabpfn_shap.sh run && python -m src.make_figures --shap
+
+# 11. robustness: financed transactions only, both legs
+bash scripts/40_financed_robustness.sh baselines        # OLS, SAR, XGB+lag (no API)
+bash scripts/40_financed_robustness.sh tabpfn           # TabPFN-3.5 zero-shot (API)
+bash scripts/40_financed_robustness.sh compare
 ```
 
 TabPFN-3.5 responses are cached under `results/tabpfn_cache/<label>/`, so
@@ -160,6 +172,13 @@ regenerated `results/cv_ols_2025_level_a.json` byte-identically.
 Out-of-fold metrics on the 2025 base; ln = natural log of the unit price
 (R$/m²). Moran's I is computed on the out-of-fold residuals with a k-NN-8
 weights matrix (higher = more spatial structure left unexplained).
+
+![The ten K-means blocks used as leave-one-block-out folds, and the per-block RMSE difference TabPFN − XGBoost+lag on 2026](results/figures/fig1_blocks_map.png)
+
+*Figure 1. (a) The ten K-means blocks of the Level A sample, each held out
+in turn as a test fold; (b) the same map with the 2026 out-of-time RMSE_ln
+difference TabPFN − XGBoost+lag per block (both fitted on the full 2025
+base) — negative everywhere.*
 
 | Model | RMSE (ln) | MAPE | R² (ln) | Moran's I of residuals |
 |---|---|---|---|---|
@@ -234,6 +253,13 @@ under-predicted).
 | XGBoost + rotated coordinates + k-NN-8 lag | 0.287 (3 seeds: 0.280–0.294) | 21.0% | 0.59 | +0.07 to +0.10 | 0.105 |
 | **TabPFN-3.5, plain table, zero-shot** (fit in 15 s) | **0.265** | **19.5%** | **0.649** | +0.058 | **0.092** |
 
+![Predicted vs observed ln unit price on the 47,810 transactions of 2026, XGBoost+lag and TabPFN-3.5](results/figures/fig3_pred_vs_obs_2026.png)
+
+*Figure 2. Predicted vs observed ln(R$/m²) on the 2026 transactions, both
+models fitted on the full 2025 base (seed 42). The dashed line is the
+identity; the cloud sitting above it is the under-prediction of a rising
+market discussed below.*
+
 Paired tests over the ten 2026 blocks (`results/oot_compare_*.json`,
 `results/oot_paired_comparisons_level_a.csv`): TabPFN zero-shot vs XGBoost
 with the explicit lag, ΔRMSE_ln = −0.013 [−0.016, −0.011], ΔMAPE = −1.4 pp
@@ -255,6 +281,24 @@ cadastral key, date and price) between the 2026 test and any 2025 base;
 0.6% of the 2026 rows share a cadastral key (same lot or building) with
 Level A. Errors are flat across blocks (0.25–0.32) and across horizons of
 one to seven months (0.26–0.29), so the result is not driven by a subset.
+
+![RMSE per block, both legs, three models](results/figures/fig2_per_block_rmse.png)
+
+*Figure 3. RMSE_ln per spatial block: leave-one-block-out CV on Level A
+(left; TabPFN below XGBoost+lag in 7 of 10 blocks, a statistical tie) and
+the 2026 out-of-time test with the full 2025 base (right; 10 of 10).*
+
+![Moran's I of the residuals, both legs](results/figures/fig5_moran.png)
+
+*Figure 4. Residual Moran's I on a k-NN-8 matrix. Left: the partial
+refutation — in the block CV the plain-table TabPFN leaves more spatial
+structure than XGBoost with the explicit lag. Right: inside space and one
+year ahead, it leaves the least of all four.*
+
+![Mean residual by month ahead, 2026](results/figures/fig4_months_ahead_bias.png)
+
+*Figure 5. Mean residual (observed − predicted, ln) by month after the end
+of the training window, models fitted on the full 2025 base.*
 
 **Limitation worth stating.** Every model under-predicts 2026 (prices
 rose), and the two non-linear learners more so (TabPFN +0.055–0.058,
@@ -285,7 +329,8 @@ pipeline/      data preparation scripts (01–04)
 src/           evaluation protocol and models (protocol, SAR/OLS, XGBoost, TabPFN-3.5)
 scripts/       TabPFN-3.5 API runs (executed on a machine with API access; outputs cached in results/)
 notebooks/     exploratory analyses
-results/       metrics (cv_*.json), out-of-fold predictions (oof_*.csv), paired tests, figures
+results/       metrics (cv_*.json, oot_*.json), out-of-fold / hold-out predictions, paired tests,
+               TabPFN response cache, SHAP values (results/shap/), figures (results/figures/)
 app/           Streamlit demo ("Avaliador SP")
 paper/         reference paper (English translation forthcoming)
 ```
@@ -301,11 +346,13 @@ paper/         reference paper (English translation forthcoming)
       three seeds, paired against the explicitly spatial baselines
 - [x] Out-of-time test 2025 → 2026 (Level A training)
 - [x] Full 2025 base (82k) out-of-time, all four models
-- [ ] Block-grouped thinking (robustness);
-      financed-only robustness run; optional extensions beyond the core
-      claim: high-cardinality location labels, text fields
-- [ ] 80% prediction intervals, NBR 14653-2 precision grades, traceable
-      comparables, SHAP
+- [x] Figures from the versioned results (`src/make_figures.py`)
+- [ ] SHAP on a small sample of 2026 properties (`src/shap_tabpfn.py`; script
+      and samples in place, API run pending)
+- [ ] Financed-only robustness run, both legs (`scripts/40_financed_robustness.sh`;
+      OLS and SAR done, XGBoost and TabPFN runs pending); block-grouped thinking
+- [ ] Optional extensions beyond the core claim: high-cardinality location
+      labels, text fields
 - [ ] Streamlit app and 2–3 min video
 
 ## License

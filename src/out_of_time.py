@@ -30,6 +30,10 @@ by leave-one-block-out on the *training* base only, cached in
 zero-shot or thinking; API responses cached under
 ``results/tabpfn_cache/oot_<label>/``).
 
+``--financed-only`` restricts both the training base and the 2026 test to
+financed transactions (robustness check on the under-declaration filter: the
+bunching at the reference value concentrates in cash deals).
+
 Run (baselines here; TabPFN on a machine with API access):
     python -m src.out_of_time --model ols --train level_a
     python -m src.out_of_time --model sar --train level_a
@@ -161,7 +165,8 @@ def make_factory(args, train_df: pd.DataFrame, out_dir: Path, label: str):
         return lambda seed: SARLagModel(seed=seed, estimator="gm")
     if args.model == "xgb":
         from .model_xgb import XGBSpatialModel, tune_on
-        cache = out_dir / f"xgb_params_oot_{args.train}.json"
+        cache = out_dir / (f"xgb_params_oot_{args.train}"
+                           + ("_fin" if args.financed_only else "") + ".json")
         if cache.exists():
             tuned = json.loads(cache.read_text())
         else:
@@ -194,7 +199,7 @@ def default_label(args) -> str:
     else:
         base = ("tabpfn_t0" + ("" if args.thinking == "off" else f"_think_{args.thinking}")
                 + ("_grp" if args.group_col else ""))
-    return f"{base}_{args.train}"
+    return f"{base}_{args.train}" + ("_fin" if args.financed_only else "")
 
 
 def main() -> None:
@@ -210,13 +215,15 @@ def main() -> None:
     ap.add_argument("--ignore-limits", action="store_true",
                     help="TabPFN: ignore_pretraining_limits (needed for the full 82k base)")
     ap.add_argument("--label", default=None)
+    ap.add_argument("--financed-only", action="store_true",
+                    help="robustness: financed transactions only, in training and in 2026")
     ap.add_argument("--compare", nargs=2, metavar=("LABEL_A", "LABEL_B"),
                     help="paired tests between two finished hold-out runs")
     ap.add_argument("--out", default="results")
     args = ap.parse_args()
 
     out_dir = Path(args.out)
-    test_df = load_base(TEST_FILE)
+    test_df = load_base(TEST_FILE, financed_only=args.financed_only)
     if args.compare:
         a, b = args.compare
         for metric in ("rmse_ln", "mape_pct"):
@@ -229,10 +236,11 @@ def main() -> None:
 
     if not args.model:
         ap.error("--model is required unless --compare is given")
-    train_df = load_base(TRAIN_FILES[args.train])
+    train_df = load_base(TRAIN_FILES[args.train], financed_only=args.financed_only)
     label = args.label or default_label(args)
     print(f"Out-of-time | model={args.model} train={args.train} ({len(train_df):,} rows) "
-          f"-> test 2026 ({len(test_df):,} rows) | label '{label}'", flush=True)
+          f"-> test 2026 ({len(test_df):,} rows) | label '{label}'"
+          + (" | financed only" if args.financed_only else ""), flush=True)
     factory = make_factory(args, train_df, out_dir, label)
     res = run_holdout(factory, train_df, test_df, label, seeds=tuple(args.seeds),
                       out_dir=out_dir)
