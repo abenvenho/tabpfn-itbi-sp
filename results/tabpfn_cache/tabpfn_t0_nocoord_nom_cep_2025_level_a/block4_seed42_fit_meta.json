@@ -1,0 +1,14 @@
+{
+  "block": "4",
+  "seed": 42,
+  "n_train": 21970,
+  "thinking": "off",
+  "group_col": null,
+  "nominal": [
+    "cep"
+  ],
+  "coordinates": false,
+  "station_distance": true,
+  "nominal_categorical": false,
+  "fit_s": 16.1
+}

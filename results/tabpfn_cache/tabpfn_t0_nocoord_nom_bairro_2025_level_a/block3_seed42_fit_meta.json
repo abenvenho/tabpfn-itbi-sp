@@ -1,0 +1,14 @@
+{
+  "block": "3",
+  "seed": 42,
+  "n_train": 21871,
+  "thinking": "off",
+  "group_col": null,
+  "nominal": [
+    "bairro"
+  ],
+  "coordinates": false,
+  "station_distance": true,
+  "nominal_categorical": false,
+  "fit_s": 15.8
+}

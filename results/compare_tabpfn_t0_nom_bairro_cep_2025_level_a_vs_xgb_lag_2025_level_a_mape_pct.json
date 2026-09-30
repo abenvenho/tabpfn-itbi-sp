@@ -1,0 +1,22 @@
+{
+  "a": "tabpfn_t0_nom_bairro_cep_2025_level_a",
+  "b": "xgb_lag_2025_level_a",
+  "metric": "mape_pct",
+  "seed": 42,
+  "wilcoxon": {
+    "n_folds": 10,
+    "statistic": 14.0,
+    "p_value": 0.193359375,
+    "mean_diff": -0.964059418295004
+  },
+  "block_bootstrap": {
+    "metric": "mape_pct",
+    "n_boot": 2000,
+    "diff": 0.12967959931155093,
+    "ci95": [
+      -2.962109074535586,
+      3.340555754603671
+    ],
+    "p_boot_two_sided": 0.96
+  }
+}

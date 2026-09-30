@@ -1,0 +1,22 @@
+{
+  "a": "tabpfn_t0_nom_bairro_2025_level_a",
+  "b": "tabpfn_t0_2025_level_a",
+  "metric": "rmse_ln",
+  "seed": 42,
+  "wilcoxon": {
+    "n_folds": 10,
+    "statistic": 27.0,
+    "p_value": 1.0,
+    "mean_diff": -5.767279228090505e-05
+  },
+  "block_bootstrap": {
+    "metric": "rmse_ln",
+    "n_boot": 2000,
+    "diff": -0.0004269590735582751,
+    "ci95": [
+      -0.0036945392845694645,
+      0.0036279011283979
+    ],
+    "p_boot_two_sided": 0.807
+  }
+}

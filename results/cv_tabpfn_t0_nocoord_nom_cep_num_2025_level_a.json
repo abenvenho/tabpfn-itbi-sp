@@ -1,0 +1,186 @@
+{
+  "label": "tabpfn_t0_nocoord_nom_cep_num_2025_level_a",
+  "n": 24000,
+  "seeds": [
+    42
+  ],
+  "folds": [
+    {
+      "block": 0,
+      "n_test": 4883
+    },
+    {
+      "block": 1,
+      "n_test": 2488
+    },
+    {
+      "block": 2,
+      "n_test": 1669
+    },
+    {
+      "block": 3,
+      "n_test": 2129
+    },
+    {
+      "block": 4,
+      "n_test": 2030
+    },
+    {
+      "block": 5,
+      "n_test": 1202
+    },
+    {
+      "block": 6,
+      "n_test": 2932
+    },
+    {
+      "block": 7,
+      "n_test": 2144
+    },
+    {
+      "block": 8,
+      "n_test": 2011
+    },
+    {
+      "block": 9,
+      "n_test": 2512
+    }
+  ],
+  "knn_k": 8,
+  "jitter_m": 0.5,
+  "per_seed": {
+    "42": {
+      "pooled": {
+        "n": 24000,
+        "rmse_ln": 0.42677026483645697,
+        "mae_ln": 0.3194149443345705,
+        "mape_pct": 35.61418177095198,
+        "median_ape_pct": 23.736682923893053,
+        "r2_ln": 0.23168659118168178
+      },
+      "per_fold": [
+        {
+          "n": 4883,
+          "rmse_ln": 0.5191231556682216,
+          "mae_ln": 0.38237040015022794,
+          "mape_pct": 50.58172153765565,
+          "median_ape_pct": 27.173037848275207,
+          "r2_ln": 0.06072347132370537,
+          "block": 0
+        },
+        {
+          "n": 2488,
+          "rmse_ln": 0.33513184598868256,
+          "mae_ln": 0.26140111379930064,
+          "mape_pct": 29.158723730791518,
+          "median_ape_pct": 21.634351263485936,
+          "r2_ln": 0.38146347887209575,
+          "block": 1
+        },
+        {
+          "n": 1669,
+          "rmse_ln": 0.3921026998889731,
+          "mae_ln": 0.29605964230811116,
+          "mape_pct": 35.97058872995024,
+          "median_ape_pct": 22.753592913125466,
+          "r2_ln": 0.20113498023594245,
+          "block": 2
+        },
+        {
+          "n": 2129,
+          "rmse_ln": 0.3338935599402455,
+          "mae_ln": 0.25159600112004815,
+          "mape_pct": 28.379594246986585,
+          "median_ape_pct": 18.75446591201751,
+          "r2_ln": 0.34163179404859445,
+          "block": 3
+        },
+        {
+          "n": 2030,
+          "rmse_ln": 0.3222114622618251,
+          "mae_ln": 0.24433016338479932,
+          "mape_pct": 24.897872853916393,
+          "median_ape_pct": 18.632352655827766,
+          "r2_ln": 0.32416388446056643,
+          "block": 4
+        },
+        {
+          "n": 1202,
+          "rmse_ln": 0.3320574537792273,
+          "mae_ln": 0.2627890885472099,
+          "mape_pct": 28.64434773774943,
+          "median_ape_pct": 21.74815347596259,
+          "r2_ln": 0.4138580162585538,
+          "block": 5
+        },
+        {
+          "n": 2932,
+          "rmse_ln": 0.567057600731609,
+          "mae_ln": 0.45713427664248063,
+          "mape_pct": 36.567701597719356,
+          "median_ape_pct": 34.39056754531153,
+          "r2_ln": -0.5403391955133607,
+          "block": 6
+        },
+        {
+          "n": 2144,
+          "rmse_ln": 0.3769995921368094,
+          "mae_ln": 0.28035834650530744,
+          "mape_pct": 33.93237414690825,
+          "median_ape_pct": 21.092622328489124,
+          "r2_ln": 0.2935395296941543,
+          "block": 7
+        },
+        {
+          "n": 2011,
+          "rmse_ln": 0.40142999417188274,
+          "mae_ln": 0.3044742922972115,
+          "mape_pct": 37.12115400694745,
+          "median_ape_pct": 23.565479150857076,
+          "r2_ln": 0.07847155438133524,
+          "block": 8
+        },
+        {
+          "n": 2512,
+          "rmse_ln": 0.3822348269855411,
+          "mae_ln": 0.29981691386502257,
+          "mape_pct": 29.918990052732262,
+          "median_ape_pct": 22.87400593013988,
+          "r2_ln": 0.13116842063844925,
+          "block": 9
+        }
+      ],
+      "moran_oof": {
+        "I": 0.43236760754022185,
+        "z_norm": 142.64953452523676,
+        "p_norm": 0.0
+      },
+      "runtime_s": 145.9
+    }
+  },
+  "model": {
+    "family": "TabPFN",
+    "version": "v3.5",
+    "thinking": "off",
+    "group_col": null,
+    "thinking_metric": null,
+    "features": [
+      "area_construida_m2",
+      "area_terreno_m2",
+      "idade",
+      "padrao_nivel",
+      "dist_estacao_m",
+      "mes_idx",
+      "tipo_imovel",
+      "cep_num"
+    ],
+    "explicit_spatial_modelling": false,
+    "nominal_location": [
+      "cep_num"
+    ],
+    "coordinates": false,
+    "station_distance": true,
+    "nominal_as": "string",
+    "analysis": "ablation"
+  }
+}

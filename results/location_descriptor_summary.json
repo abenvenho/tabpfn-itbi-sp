@@ -1,0 +1,1440 @@
+{
+  "seed": 42,
+  "legs": [
+    {
+      "leg": "Leg 1 \u2014 leave-one-block-out CV, Level A (24k)",
+      "rows": [
+        {
+          "model": "OLS hedonic",
+          "label": "ols",
+          "rmse_ln": 0.470489303392237,
+          "mape_pct": 39.420663073939735,
+          "r2_ln": 0.06620914538162703,
+          "moran_I": 0.390454438675174
+        },
+        {
+          "model": "SAR lag",
+          "label": "sar_gm",
+          "rmse_ln": 0.44761102234890593,
+          "mape_pct": 38.431984027862676,
+          "r2_ln": 0.15481524916958123,
+          "moran_I": 0.3625374600625561
+        },
+        {
+          "model": "XGBoost + rotated coords + k-NN-8 lag",
+          "label": "xgb_lag",
+          "rmse_ln": 0.38464329618971693,
+          "mape_pct": 32.296189105115964,
+          "r2_ln": 0.375882380642655,
+          "moran_I": 0.3085263163280693
+        },
+        {
+          "model": "**TabPFN-3.5, plain table (lat/lon)**",
+          "label": "tabpfn_t0",
+          "rmse_ln": 0.3938124075049789,
+          "mape_pct": 32.18701467679705,
+          "r2_ln": 0.3457723457954808,
+          "moran_I": 0.34804570697229326,
+          "recovered": 1.0
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: no location (floor)",
+          "label": "tabpfn_t0_nocoord",
+          "rmse_ln": 0.43412883879753156,
+          "mape_pct": 35.62873938396392,
+          "r2_ln": 0.20496292593991594,
+          "moran_I": 0.3925878838566849,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.040316431292552635,
+            "ci95": [
+              0.012528377113411978,
+              0.07349846094627784
+            ],
+            "p_boot_two_sided": 0.005
+          },
+          "blocks_better_vs_plain": 2,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.049485542607814625,
+            "ci95": [
+              0.012554806145942895,
+              0.07684172931683313
+            ],
+            "p_boot_two_sided": 0.001
+          },
+          "blocks_better_vs_xgb": 1,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.013482183551374372,
+            "ci95": [
+              -0.06963708729331439,
+              0.02616184963051138
+            ],
+            "p_boot_two_sided": 0.528
+          },
+          "blocks_better_vs_sar": 8,
+          "recovered": 0.0
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: postal code",
+          "label": "tabpfn_t0_nocoord_nom_cep",
+          "rmse_ln": 0.44530171954614955,
+          "mape_pct": 37.630244434052514,
+          "r2_ln": 0.1635136619065155,
+          "moran_I": 0.47706585444968175,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.05148931204117063,
+            "ci95": [
+              0.00047935324978775083,
+              0.09878910412709886
+            ],
+            "p_boot_two_sided": 0.049
+          },
+          "blocks_better_vs_plain": 2,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.06065842335643262,
+            "ci95": [
+              -0.0007145620437013444,
+              0.10495223796871128
+            ],
+            "p_boot_two_sided": 0.059
+          },
+          "blocks_better_vs_xgb": 4,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.0023093028027563745,
+            "ci95": [
+              -0.07735489724391,
+              0.051772725181745055
+            ],
+            "p_boot_two_sided": 0.877
+          },
+          "blocks_better_vs_sar": 8,
+          "recovered": -0.2771297059390741
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: district field",
+          "label": "tabpfn_t0_nocoord_nom_bairro",
+          "rmse_ln": 0.42888458649948213,
+          "mape_pct": 34.984557339648035,
+          "r2_ln": 0.22405491763870788,
+          "moran_I": 0.37180710901517544,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.03507217899450321,
+            "ci95": [
+              0.007647506967702902,
+              0.07053833877161204
+            ],
+            "p_boot_two_sided": 0.01
+          },
+          "blocks_better_vs_plain": 3,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.0442412903097652,
+            "ci95": [
+              0.009300081148788074,
+              0.07181251273669625
+            ],
+            "p_boot_two_sided": 0.003
+          },
+          "blocks_better_vs_xgb": 2,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.018726435849423795,
+            "ci95": [
+              -0.07318518419178432,
+              0.019457474106789472
+            ],
+            "p_boot_two_sided": 0.374
+          },
+          "blocks_better_vs_sar": 7,
+          "recovered": 0.13007729429212045
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: district + postal code",
+          "label": "tabpfn_t0_nocoord_nom_bairro_cep",
+          "rmse_ln": 0.4458109912131831,
+          "mape_pct": 37.815892217904846,
+          "r2_ln": 0.1615992637758641,
+          "moran_I": 0.4822423857078123,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.051998583708204205,
+            "ci95": [
+              -0.0009975292358045391,
+              0.09751083190961249
+            ],
+            "p_boot_two_sided": 0.058
+          },
+          "blocks_better_vs_plain": 3,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.061167695023466195,
+            "ci95": [
+              -0.002440893389749819,
+              0.10755552462388698
+            ],
+            "p_boot_two_sided": 0.077
+          },
+          "blocks_better_vs_xgb": 4,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.0018000311357228016,
+            "ci95": [
+              -0.08053964218233761,
+              0.05575136947074518
+            ],
+            "p_boot_two_sided": 0.897
+          },
+          "blocks_better_vs_sar": 8,
+          "recovered": -0.28976156969055766
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: postal code as a number",
+          "label": "tabpfn_t0_nocoord_nom_cep_num",
+          "rmse_ln": 0.42677026483645697,
+          "mape_pct": 35.61418177095198,
+          "r2_ln": 0.23168659118168178,
+          "moran_I": 0.43236760754022185,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.032957857331478047,
+            "ci95": [
+              -0.009104173540365197,
+              0.08103245662798556
+            ],
+            "p_boot_two_sided": 0.16
+          },
+          "blocks_better_vs_plain": 4,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.04212696864674004,
+            "ci95": [
+              -0.008036353092598321,
+              0.08128516017297419
+            ],
+            "p_boot_two_sided": 0.148
+          },
+          "blocks_better_vs_xgb": 4,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.02084075751244896,
+            "ci95": [
+              -0.08579390083727506,
+              0.02824392068518176
+            ],
+            "p_boot_two_sided": 0.399
+          },
+          "blocks_better_vs_sar": 8,
+          "recovered": 0.18252046932620955
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon, no station distance: nothing spatial (strict floor)",
+          "label": "tabpfn_t0_nocoord_nostation",
+          "rmse_ln": 0.4402870894844408,
+          "mape_pct": 36.63202357843481,
+          "r2_ln": 0.18224725693056865,
+          "moran_I": 0.37154162207228586,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.04647468197946186,
+            "ci95": [
+              0.023428987719057316,
+              0.07438903881570516
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 1,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.05564379329472385,
+            "ci95": [
+              0.02515707429071578,
+              0.07879239535526349
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 1,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.007323932864465144,
+            "ci95": [
+              -0.0573783613769404,
+              0.029009346828341116
+            ],
+            "p_boot_two_sided": 0.705
+          },
+          "blocks_better_vs_sar": 7,
+          "recovered": 0.0
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon, no station distance: postal code only",
+          "label": "tabpfn_t0_nocoord_nostation_nom_cep",
+          "rmse_ln": 0.45676497119918286,
+          "mape_pct": 38.61868092798309,
+          "r2_ln": 0.11989256511951107,
+          "moran_I": 0.5018392148949696,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.06295256369420393,
+            "ci95": [
+              0.003307106708198482,
+              0.11731907490575132
+            ],
+            "p_boot_two_sided": 0.035
+          },
+          "blocks_better_vs_plain": 2,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.07212167500946592,
+            "ci95": [
+              0.002583385392281701,
+              0.12278105140476699
+            ],
+            "p_boot_two_sided": 0.033
+          },
+          "blocks_better_vs_xgb": 4,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.009153948850276927,
+            "ci95": [
+              -0.07351675075818431,
+              0.06880666004135039
+            ],
+            "p_boot_two_sided": 0.867
+          },
+          "blocks_better_vs_sar": 8,
+          "recovered": -0.3545560940475933
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon, no station distance: postal code as a number only",
+          "label": "tabpfn_t0_nocoord_nostation_nom_cep_num",
+          "rmse_ln": 0.4398550909334709,
+          "mape_pct": 36.87790150575017,
+          "r2_ln": 0.1838511862743062,
+          "moran_I": 0.4502310896233175,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.04604268342849199,
+            "ci95": [
+              -0.0008851355003248642,
+              0.10145530694005087
+            ],
+            "p_boot_two_sided": 0.058
+          },
+          "blocks_better_vs_plain": 2,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.055211794743753984,
+            "ci95": [
+              0.007139107560918481,
+              0.09726827876235718
+            ],
+            "p_boot_two_sided": 0.027
+          },
+          "blocks_better_vs_xgb": 4,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.007755931415435013,
+            "ci95": [
+              -0.06598038311348045,
+              0.03774092342601352
+            ],
+            "p_boot_two_sided": 0.723
+          },
+          "blocks_better_vs_sar": 7,
+          "recovered": 0.009295352492369482
+        }
+      ],
+      "seen_unseen": []
+    },
+    {
+      "leg": "Leg 2 \u2014 fit on Level A (24k), predict 2026",
+      "rows": [
+        {
+          "model": "OLS hedonic",
+          "label": "ols",
+          "rmse_ln": 0.40364796123986496,
+          "mape_pct": 32.436191330657635,
+          "r2_ln": 0.18472282607062263,
+          "moran_I": 0.4075103361978319,
+          "bias_ln": 0.03255778420628258
+        },
+        {
+          "model": "SAR lag",
+          "label": "sar_gm",
+          "rmse_ln": 0.34587335396773855,
+          "mape_pct": 26.9748429408328,
+          "r2_ln": 0.40140378385966946,
+          "moran_I": 0.22423805431320865,
+          "bias_ln": 0.03245931568180729
+        },
+        {
+          "model": "XGBoost + rotated coords + k-NN-8 lag",
+          "label": "xgb_lag",
+          "rmse_ln": 0.28841800895914627,
+          "mape_pct": 21.830942991637432,
+          "r2_ln": 0.5837593361795331,
+          "moran_I": 0.1398600109742414,
+          "bias_ln": 0.04665994637678221
+        },
+        {
+          "model": "**TabPFN-3.5, plain table (lat/lon)**",
+          "label": "tabpfn_t0",
+          "rmse_ln": 0.2749540519182031,
+          "mape_pct": 20.40413671756975,
+          "r2_ln": 0.6217142298624259,
+          "moran_I": 0.12203064860261674,
+          "bias_ln": 0.05524633461346416,
+          "recovered": 1.0
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: no location (floor)",
+          "label": "tabpfn_t0_nocoord",
+          "rmse_ln": 0.32123118420208235,
+          "mape_pct": 23.754772002373485,
+          "r2_ln": 0.48366073283389444,
+          "moran_I": 0.2236983899979154,
+          "bias_ln": 0.05739834447253129,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.04627713228387925,
+            "ci95": [
+              0.030136139873030994,
+              0.062045137280998336
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 0,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.03281317524293609,
+            "ci95": [
+              0.01820813146213706,
+              0.04754771333620843
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 0,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.024642169765656197,
+            "ci95": [
+              -0.03534088500092886,
+              -0.015158752001396384
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 9,
+          "recovered": 0.0
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: postal code",
+          "label": "tabpfn_t0_nocoord_nom_cep",
+          "rmse_ln": 0.2766801121692604,
+          "mape_pct": 20.771774599148262,
+          "r2_ln": 0.6169498447016684,
+          "moran_I": 0.12513924219119257,
+          "bias_ln": 0.042575357215081884,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.0017260602510573153,
+            "ci95": [
+              -0.0002126416359474442,
+              0.00305608745255918
+            ],
+            "p_boot_two_sided": 0.075
+          },
+          "blocks_better_vs_plain": 3,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.011737896789885849,
+            "ci95": [
+              -0.013546054207685617,
+              -0.010183884616816736
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 10,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.06919324179847813,
+            "ci95": [
+              -0.07620029227090094,
+              -0.061496120679685094
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 0.9627016592024525
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: district field",
+          "label": "tabpfn_t0_nocoord_nom_bairro",
+          "rmse_ln": 0.3136481234007381,
+          "mape_pct": 23.301186493969386,
+          "r2_ln": 0.5077506589098282,
+          "moran_I": 0.1942568079238324,
+          "bias_ln": 0.05488369843866558,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.03869407148253501,
+            "ci95": [
+              0.02443919742096734,
+              0.05249917479437638
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 0,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.025230114441591844,
+            "ci95": [
+              0.012790356499181836,
+              0.037459611500753706
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 0,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.03222523056700044,
+            "ci95": [
+              -0.041358568877931164,
+              -0.025078161888420682
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 0.16386194275883903
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: district + postal code",
+          "label": "tabpfn_t0_nocoord_nom_bairro_cep",
+          "rmse_ln": 0.2779821262413211,
+          "mape_pct": 20.829210314947176,
+          "r2_ln": 0.6133362117760166,
+          "moran_I": 0.12422325915856053,
+          "bias_ln": 0.04511511824511506,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.003028074323118024,
+            "ci95": [
+              0.0014358598431154681,
+              0.00422732785559912
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 2,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.01043588271782514,
+            "ci95": [
+              -0.012349651906142583,
+              -0.008474626274922849
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 10,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.06789122772641742,
+            "ci95": [
+              -0.0750565430953989,
+              -0.059829428157848995
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 0.9345665089067574
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: postal code as a number",
+          "label": "tabpfn_t0_nocoord_nom_cep_num",
+          "rmse_ln": 0.2744674675306177,
+          "mape_pct": 20.323529029937493,
+          "r2_ln": 0.6230519448485348,
+          "moran_I": 0.1236035312234234,
+          "bias_ln": 0.053589398804540764,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.00048658438758542033,
+            "ci95": [
+              -0.001796120136454231,
+              0.0007333440054493794
+            ],
+            "p_boot_two_sided": 0.442
+          },
+          "blocks_better_vs_plain": 8,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.013950541428528584,
+            "ci95": [
+              -0.015809151089921744,
+              -0.012021286197261246
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 10,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.07140588643712087,
+            "ci95": [
+              -0.0786270869374024,
+              -0.06388354937374786
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 1.0105145752031597
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon, no station distance: nothing spatial (strict floor)",
+          "label": "tabpfn_t0_nocoord_nostation",
+          "rmse_ln": 0.3515085696962472,
+          "mape_pct": 26.718619313549624,
+          "r2_ln": 0.38173937075388564,
+          "moran_I": 0.2967558489080027,
+          "bias_ln": 0.05825734509003511,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.07655451777804412,
+            "ci95": [
+              0.05021523464111103,
+              0.10050084920818551
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 0,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.06309056073710095,
+            "ci95": [
+              0.03809945711234403,
+              0.0855880005219827
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 0,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.005635215728508669,
+            "ci95": [
+              -0.014550927958078821,
+              0.022714113371012427
+            ],
+            "p_boot_two_sided": 0.657
+          },
+          "blocks_better_vs_sar": 7,
+          "recovered": 0.0
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon, no station distance: postal code only",
+          "label": "tabpfn_t0_nocoord_nostation_nom_cep",
+          "rmse_ln": 0.277055939747311,
+          "mape_pct": 20.6896299614638,
+          "r2_ln": 0.6159085079364699,
+          "moran_I": 0.1285092865715413,
+          "bias_ln": 0.047886684319345174,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.002101887829107918,
+            "ci95": [
+              0.0006100432776624476,
+              0.00321392210404419
+            ],
+            "p_boot_two_sided": 0.007
+          },
+          "blocks_better_vs_plain": 2,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.011362069211835246,
+            "ci95": [
+              -0.013221969404375544,
+              -0.009581157911142982
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 10,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.06881741422042753,
+            "ci95": [
+              -0.07599061823704378,
+              -0.0614118500168081
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 0.9725439087056631
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon, no station distance: postal code as a number only",
+          "label": "tabpfn_t0_nocoord_nostation_nom_cep_num",
+          "rmse_ln": 0.2755742319493901,
+          "mape_pct": 20.50787395366677,
+          "r2_ln": 0.6200057999322703,
+          "moran_I": 0.1249589780606959,
+          "bias_ln": 0.05148600163103723,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.0006201800311870231,
+            "ci95": [
+              -0.0004071466648065625,
+              0.0014171752400507602
+            ],
+            "p_boot_two_sided": 0.23
+          },
+          "blocks_better_vs_plain": 4,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.012843777009756141,
+            "ci95": [
+              -0.014454929723111121,
+              -0.010894415228484385
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 10,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.07029912201834843,
+            "ci95": [
+              -0.07749600648483462,
+              -0.06266933944649503
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 0.9918988447816349
+        }
+      ],
+      "seen_unseen": [
+        {
+          "descriptor": "postal code (no lat/lon)",
+          "subset": "cep seen in training",
+          "n": 37113,
+          "share": 0.7762601966115875,
+          "rmse_floor": 0.30128675644471675,
+          "rmse_descriptor": 0.2645996542655098,
+          "rmse_plain": 0.26296844308066497,
+          "recovered": 0.9574299847347889
+        },
+        {
+          "descriptor": "postal code (no lat/lon)",
+          "subset": "cep not seen",
+          "n": 10697,
+          "share": 0.22373980338841246,
+          "rmse_floor": 0.38244697270021816,
+          "rmse_descriptor": 0.3150213900390642,
+          "rmse_plain": 0.31299934779629407,
+          "recovered": 0.9708839251800548
+        },
+        {
+          "descriptor": "district field (no lat/lon)",
+          "subset": "bairro seen in training",
+          "n": 24369,
+          "share": 0.5097050826186991,
+          "rmse_floor": 0.3106497458027024,
+          "rmse_descriptor": 0.2886828344969431,
+          "rmse_plain": 0.26665297921169795,
+          "recovered": 0.49928467493905865
+        },
+        {
+          "descriptor": "district field (no lat/lon)",
+          "subset": "bairro not seen",
+          "n": 5510,
+          "share": 0.11524785609705082,
+          "rmse_floor": 0.3263743196353569,
+          "rmse_descriptor": 0.32913450634030994,
+          "rmse_plain": 0.28431120942612603,
+          "recovered": -0.06562012868813746
+        },
+        {
+          "descriptor": "district field (no lat/lon)",
+          "subset": "bairro empty",
+          "n": 17931,
+          "share": 0.37504706128425014,
+          "rmse_floor": 0.33354583606714644,
+          "rmse_descriptor": 0.3402244868218311,
+          "rmse_plain": 0.2830226030670651,
+          "recovered": -0.13218969488104426
+        },
+        {
+          "descriptor": "district + postal code (no lat/lon)",
+          "subset": "cep seen in training",
+          "n": 37113,
+          "share": 0.7762601966115875,
+          "rmse_floor": 0.30128675644471675,
+          "rmse_descriptor": 0.26579465356200993,
+          "rmse_plain": 0.26296844308066497,
+          "recovered": 0.9262438705353779
+        },
+        {
+          "descriptor": "district + postal code (no lat/lon)",
+          "subset": "cep not seen",
+          "n": 10697,
+          "share": 0.22373980338841246,
+          "rmse_floor": 0.38244697270021816,
+          "rmse_descriptor": 0.3166499764475034,
+          "rmse_plain": 0.31299934779629407,
+          "recovered": 0.9474333549022051
+        },
+        {
+          "descriptor": "postal code as a number (no lat/lon)",
+          "subset": "cep seen in training",
+          "n": 37113,
+          "share": 0.7762601966115875,
+          "rmse_floor": 0.30128675644471675,
+          "rmse_descriptor": 0.26233116434389836,
+          "rmse_plain": 0.26296844308066497,
+          "recovered": 1.0166311792148053
+        },
+        {
+          "descriptor": "postal code as a number (no lat/lon)",
+          "subset": "cep not seen",
+          "n": 10697,
+          "share": 0.22373980338841246,
+          "rmse_floor": 0.38244697270021816,
+          "rmse_descriptor": 0.3129459570952808,
+          "rmse_plain": 0.31299934779629407,
+          "recovered": 1.0007687908850325
+        },
+        {
+          "descriptor": "postal code only (no lat/lon, no station distance)",
+          "subset": "cep seen in training",
+          "n": 37113,
+          "share": 0.7762601966115875,
+          "rmse_floor": 0.33587611926860683,
+          "rmse_descriptor": 0.26475703970887,
+          "rmse_plain": 0.26296844308066497,
+          "recovered": 0.9754676500236495
+        },
+        {
+          "descriptor": "postal code only (no lat/lon, no station distance)",
+          "subset": "cep not seen",
+          "n": 10697,
+          "share": 0.22373980338841246,
+          "rmse_floor": 0.40104808785402074,
+          "rmse_descriptor": 0.3160372813500541,
+          "rmse_plain": 0.31299934779629407,
+          "recovered": 0.9654971377015924
+        },
+        {
+          "descriptor": "postal code as a number only (no lat/lon, no station distance)",
+          "subset": "cep seen in training",
+          "n": 37113,
+          "share": 0.7762601966115875,
+          "rmse_floor": 0.33587611926860683,
+          "rmse_descriptor": 0.2635477480346742,
+          "rmse_plain": 0.26296844308066497,
+          "recovered": 0.9920542666520344
+        },
+        {
+          "descriptor": "postal code as a number only (no lat/lon, no station distance)",
+          "subset": "cep not seen",
+          "n": 10697,
+          "share": 0.22373980338841246,
+          "rmse_floor": 0.40104808785402074,
+          "rmse_descriptor": 0.3137456823296447,
+          "rmse_plain": 0.31299934779629407,
+          "recovered": 0.9915236205213005
+        }
+      ]
+    },
+    {
+      "leg": "Leg 2 \u2014 fit on the full 2025 base (82k), predict 2026",
+      "rows": [
+        {
+          "model": "OLS hedonic",
+          "label": "ols",
+          "rmse_ln": 0.4014511683627176,
+          "mape_pct": 32.44744644624517,
+          "r2_ln": 0.19357272326016317,
+          "moran_I": 0.39669687809042314,
+          "bias_ln": 0.022823853227952044
+        },
+        {
+          "model": "SAR lag",
+          "label": "sar_gm",
+          "rmse_ln": 0.32559591369910945,
+          "mape_pct": 25.026449625340653,
+          "r2_ln": 0.46953388406541774,
+          "moran_I": 0.13397835125585725,
+          "bias_ln": 0.03113669060836671
+        },
+        {
+          "model": "XGBoost + rotated coords + k-NN-8 lag",
+          "label": "xgb_lag",
+          "rmse_ln": 0.29396368996587635,
+          "mape_pct": 21.522805407558522,
+          "r2_ln": 0.5675985546037604,
+          "moran_I": 0.10665517837776813,
+          "bias_ln": 0.10339975548045853
+        },
+        {
+          "model": "**TabPFN-3.5, plain table (lat/lon)**",
+          "label": "tabpfn_t0",
+          "rmse_ln": 0.26485798426415885,
+          "mape_pct": 19.483797962611725,
+          "r2_ln": 0.6489848222799983,
+          "moran_I": 0.09214411433595011,
+          "bias_ln": 0.057884309397021064,
+          "recovered": 1.0
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: no location (floor)",
+          "label": "tabpfn_t0_nocoord",
+          "rmse_ln": 0.2954605332729502,
+          "mape_pct": 21.426251098762997,
+          "r2_ln": 0.5631838253307588,
+          "moran_I": 0.14345712128140278,
+          "bias_ln": 0.05664388839228588,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.030602549008791335,
+            "ci95": [
+              0.021172397396834006,
+              0.03910953251526119
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 0,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.0014968433070738363,
+            "ci95": [
+              -0.008862906199547056,
+              0.010524305223465284
+            ],
+            "p_boot_two_sided": 0.796
+          },
+          "blocks_better_vs_xgb": 6,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.03013538042615932,
+            "ci95": [
+              -0.039392503237276985,
+              -0.02353278991931126
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 0.0
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: postal code",
+          "label": "tabpfn_t0_nocoord_nom_cep",
+          "rmse_ln": 0.2643123884984479,
+          "mape_pct": 19.53963578886048,
+          "r2_ln": 0.6504294843441061,
+          "moran_I": 0.08886591037842904,
+          "bias_ln": 0.0498626337318285,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.0005455957657109489,
+            "ci95": [
+              -0.002027526499248889,
+              0.0008378312940028215
+            ],
+            "p_boot_two_sided": 0.408
+          },
+          "blocks_better_vs_plain": 6,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.029651301467428448,
+            "ci95": [
+              -0.033670664605378764,
+              -0.026079113761150366
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 10,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.061283525200661604,
+            "ci95": [
+              -0.06675682773603978,
+              -0.05573918301525164
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 1.0178284418580366
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: district field",
+          "label": "tabpfn_t0_nocoord_nom_bairro",
+          "rmse_ln": 0.28957348498125607,
+          "mape_pct": 21.113548446639292,
+          "r2_ln": 0.5804175232008156,
+          "moran_I": 0.12425109157605883,
+          "bias_ln": 0.04966390992623199,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.024715500717097216,
+            "ci95": [
+              0.016098093650997645,
+              0.03272858888986843
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 0,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.004390204984620283,
+            "ci95": [
+              -0.013649441082331673,
+              0.0038266495630230437
+            ],
+            "p_boot_two_sided": 0.285
+          },
+          "blocks_better_vs_xgb": 7,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.03602242871785344,
+            "ci95": [
+              -0.044615291907177765,
+              -0.029894934263193174
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 0.192371174375145
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: district + postal code",
+          "label": "tabpfn_t0_nocoord_nom_bairro_cep",
+          "rmse_ln": 0.26211669728945214,
+          "mape_pct": 19.45216395608254,
+          "r2_ln": 0.6562132527714601,
+          "moran_I": 0.08684675323895875,
+          "bias_ln": 0.037449652753158556,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.0027412869747067137,
+            "ci95": [
+              -0.004572810704600969,
+              -0.0011835804706008294
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 8,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.03184699267642421,
+            "ci95": [
+              -0.036143939316338365,
+              -0.028138995761147596
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 10,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.06347921640965737,
+            "ci95": [
+              -0.06923368796710037,
+              -0.05814846202182766
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 1.089577079802052
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon: postal code as a number",
+          "label": "tabpfn_t0_nocoord_nom_cep_num",
+          "rmse_ln": 0.26324409458839515,
+          "mape_pct": 19.37577847492386,
+          "r2_ln": 0.6532495516500398,
+          "moran_I": 0.0882812862699242,
+          "bias_ln": 0.05467834897028357,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.0016138896757637022,
+            "ci95": [
+              -0.002351902938586947,
+              -0.0008473385389513423
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 8,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.0307195953774812,
+            "ci95": [
+              -0.03412342382359567,
+              -0.027616246240943148
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 10,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.06235181911071436,
+            "ci95": [
+              -0.06765613889626028,
+              -0.05683080539473062
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 1.052737099621998
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon, no station distance: nothing spatial (strict floor)",
+          "label": "tabpfn_t0_nocoord_nostation",
+          "rmse_ln": 0.32715596173062544,
+          "mape_pct": 24.419016636061993,
+          "r2_ln": 0.4644383952259207,
+          "moran_I": 0.22567805512556358,
+          "bias_ln": 0.05727429864193652,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.06229797746646659,
+            "ci95": [
+              0.04190173430517215,
+              0.08057870292259182
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 0,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.03319227176474909,
+            "ci95": [
+              0.01249150957942874,
+              0.05187010764320581
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 1,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.001560048031515937,
+            "ci95": [
+              -0.017125116545866795,
+              0.016833263031419313
+            ],
+            "p_boot_two_sided": 0.911
+          },
+          "blocks_better_vs_sar": 7,
+          "recovered": 0.0
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon, no station distance: postal code only",
+          "label": "tabpfn_t0_nocoord_nostation_nom_cep",
+          "rmse_ln": 0.2684149015720489,
+          "mape_pct": 19.773682391450436,
+          "r2_ln": 0.6394935806928547,
+          "moran_I": 0.09064627649855501,
+          "bias_ln": 0.06430792418062826,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.0035569173078900396,
+            "ci95": [
+              0.0026973661973837978,
+              0.004510181538755334
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_plain": 0,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.02554878839382746,
+            "ci95": [
+              -0.029186217412281546,
+              -0.0222043848250322
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 10,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.057181012127060615,
+            "ci95": [
+              -0.06261557065110464,
+              -0.05142562144823708
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 0.9429047707077708
+        },
+        {
+          "model": "TabPFN-3.5, no lat/lon, no station distance: postal code as a number only",
+          "label": "tabpfn_t0_nocoord_nostation_nom_cep_num",
+          "rmse_ln": 0.26604858811888793,
+          "mape_pct": 19.581669544111488,
+          "r2_ln": 0.6458219246002592,
+          "moran_I": 0.09244124593844223,
+          "bias_ln": 0.0574484120250671,
+          "d_vs_plain": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": 0.0011906038547290776,
+            "ci95": [
+              0.00028133318511621016,
+              0.001978814040320869
+            ],
+            "p_boot_two_sided": 0.011
+          },
+          "blocks_better_vs_plain": 2,
+          "n_blocks": 10,
+          "d_vs_xgb": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.02791510184698842,
+            "ci95": [
+              -0.03152005050291317,
+              -0.024799251342842
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_xgb": 10,
+          "d_vs_sar": {
+            "metric": "rmse_ln",
+            "n_boot": 2000,
+            "diff": -0.05954732558022158,
+            "ci95": [
+              -0.06492529596443083,
+              -0.05410856109828355
+            ],
+            "p_boot_two_sided": 0.0
+          },
+          "blocks_better_vs_sar": 10,
+          "recovered": 0.9808885632704537
+        }
+      ],
+      "seen_unseen": [
+        {
+          "descriptor": "postal code (no lat/lon)",
+          "subset": "cep seen in training",
+          "n": 43284,
+          "share": 0.9053336122150177,
+          "rmse_floor": 0.28148606873923476,
+          "rmse_descriptor": 0.2554657273720917,
+          "rmse_plain": 0.25600756598452157,
+          "recovered": 1.0212665013186308
+        },
+        {
+          "descriptor": "postal code (no lat/lon)",
+          "subset": "cep not seen",
+          "n": 4526,
+          "share": 0.09466638778498222,
+          "rmse_floor": 0.4054653138814522,
+          "rmse_descriptor": 0.3373966234361021,
+          "rmse_plain": 0.33798803459161086,
+          "recovered": 1.0087645969388959
+        },
+        {
+          "descriptor": "district field (no lat/lon)",
+          "subset": "bairro seen in training",
+          "n": 27210,
+          "share": 0.5691277975318971,
+          "rmse_floor": 0.28276581845130494,
+          "rmse_descriptor": 0.26728751233130676,
+          "rmse_plain": 0.25682885425858004,
+          "recovered": 0.5967662986688207
+        },
+        {
+          "descriptor": "district field (no lat/lon)",
+          "subset": "bairro not seen",
+          "n": 2669,
+          "share": 0.05582514118385275,
+          "rmse_floor": 0.3225069313057194,
+          "rmse_descriptor": 0.32859119743454357,
+          "rmse_plain": 0.2931664733278083,
+          "recovered": -0.20736779682868994
+        },
+        {
+          "descriptor": "district field (no lat/lon)",
+          "subset": "bairro empty",
+          "n": 17931,
+          "share": 0.37504706128425014,
+          "rmse_floor": 0.30975485691357596,
+          "rmse_descriptor": 0.314793477515087,
+          "rmse_plain": 0.2723135887094737,
+          "recovered": -0.1345739832861484
+        },
+        {
+          "descriptor": "district + postal code (no lat/lon)",
+          "subset": "cep seen in training",
+          "n": 43284,
+          "share": 0.9053336122150177,
+          "rmse_floor": 0.28148606873923476,
+          "rmse_descriptor": 0.25331081224121393,
+          "rmse_plain": 0.25600756598452157,
+          "recovered": 1.1058442785775067
+        },
+        {
+          "descriptor": "district + postal code (no lat/lon)",
+          "subset": "cep not seen",
+          "n": 4526,
+          "share": 0.09466638778498222,
+          "rmse_floor": 0.4054653138814522,
+          "rmse_descriptor": 0.3348305999585441,
+          "rmse_plain": 0.33798803459161086,
+          "recovered": 1.0467925599001164
+        },
+        {
+          "descriptor": "postal code as a number (no lat/lon)",
+          "subset": "cep seen in training",
+          "n": 43284,
+          "share": 0.9053336122150177,
+          "rmse_floor": 0.28148606873923476,
+          "rmse_descriptor": 0.25446617757061335,
+          "rmse_plain": 0.25600756598452157,
+          "recovered": 1.0604976057167677
+        },
+        {
+          "descriptor": "postal code as a number (no lat/lon)",
+          "subset": "cep not seen",
+          "n": 4526,
+          "share": 0.09466638778498222,
+          "rmse_floor": 0.4054653138814522,
+          "rmse_descriptor": 0.33579397018589097,
+          "rmse_plain": 0.33798803459161086,
+          "recovered": 1.0325156027156273
+        },
+        {
+          "descriptor": "postal code only (no lat/lon, no station distance)",
+          "subset": "cep seen in training",
+          "n": 43284,
+          "share": 0.9053336122150177,
+          "rmse_floor": 0.31584169202538986,
+          "rmse_descriptor": 0.2596093185382115,
+          "rmse_plain": 0.25600756598452157,
+          "recovered": 0.9398043759972387
+        },
+        {
+          "descriptor": "postal code only (no lat/lon, no station distance)",
+          "subset": "cep not seen",
+          "n": 4526,
+          "share": 0.09466638778498222,
+          "rmse_floor": 0.42024434397496746,
+          "rmse_descriptor": 0.3413388714354273,
+          "rmse_plain": 0.33798803459161086,
+          "recovered": 0.9592634672168452
+        },
+        {
+          "descriptor": "postal code as a number only (no lat/lon, no station distance)",
+          "subset": "cep seen in training",
+          "n": 43284,
+          "share": 0.9053336122150177,
+          "rmse_floor": 0.31584169202538986,
+          "rmse_descriptor": 0.2570423340105866,
+          "rmse_plain": 0.25600756598452157,
+          "recovered": 0.9827060559828636
+        },
+        {
+          "descriptor": "postal code as a number only (no lat/lon, no station distance)",
+          "subset": "cep not seen",
+          "n": 4526,
+          "share": 0.09466638778498222,
+          "rmse_floor": 0.42024434397496746,
+          "rmse_descriptor": 0.3403467949351539,
+          "rmse_plain": 0.33798803459161086,
+          "recovered": 0.9713242624033859
+        }
+      ]
+    }
+  ]
+}

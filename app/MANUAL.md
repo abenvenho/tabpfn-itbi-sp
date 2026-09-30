@@ -4,6 +4,8 @@ A Streamlit app that lets you walk through the study without opening a JSON file
 scoreboard, a map of where each model fails, a per-transaction inspector, and — with an API token —
 a live TabPFN-3.5 estimate for a property you describe.
 
+**Public instance:** https://tabpfn-itbi-sp.streamlit.app (no install needed).
+
 Everything except the last tab is read from the files versioned in this repository (`data/`,
 `results/`). No model is re-run; the numbers on screen are the ones in the README.
 
@@ -20,7 +22,7 @@ streamlit run app/app.py
 The browser opens at `http://localhost:8501`. First load takes a few seconds (47,810 transactions
 and four sets of predictions are read and cached in memory).
 
-Requirements: Python 3.10+, ~1 GB of RAM, no GPU. The street basemap is fetched from a public tile
+Requirements: Python 3.10+, Streamlit ≥ 1.50, ~1 GB of RAM, no GPU. The street basemap is fetched from a public tile
 server; without internet, untick *Street basemap* in the sidebar and the maps fall back to plain
 latitude/longitude axes.
 
@@ -91,8 +93,14 @@ chosen *inside the tab* and the property you describe. Three bases are offered, 
 model record from the study: Level A (24,000 rows, the main analysis), the full 2025 base (82,187
 rows) and financed deals only (7,211 rows, the robustness run). On first use of a base the app tries
 to reload its cached record (`results/tabpfn_cache/oot_tabpfn_t0_*/`; works when the token belongs
-to the account that fitted it) and otherwise fits a fresh model on those rows — 10–20 seconds, once
-per session and base, cached in memory. The result line says which of the two happened.
+to the account that fitted it and the server still holds the fit) and otherwise fits a fresh model
+on those rows — 10–20 seconds, once per base, cached in memory. The result line says which of the
+two happened. If the API refuses the call (quota, revoked token, network), the tab says so in one
+line instead of an estimate.
+
+`python scripts/60_app_live_check.py` runs this tab headless with your token — it presses
+**Estimate** for each base and prints the estimates — which is the quickest way to check a token or
+a deployment before showing the app to someone.
 
 Fill in the nine T0 fields (type, built and lot area, age, finish grade, distance to the nearest
 station, coordinates) and press **Estimate**. The output is a unit value in R$/m² and a total, at the
@@ -126,6 +134,6 @@ appraisal.
 | "No 2026 transaction with that SQL" | The key is not in the cleaned 2026 base (filter chain in `data/filter_report.md`). The app falls back to the first SHAP property. |
 | Tab 4 shows a warning | No `TABPFN_TOKEN` in the environment or secrets. |
 | Tab 4 gives the same value after changing sidebar filters | Expected: the sidebar filters the 2026 view, not the training data. Use the *Fit TabPFN-3.5 on* selector in the tab. |
+| Tab 4 shows "The Prior Labs API call failed" | The message after the dash is the server's: usage limit reached, token revoked, or no network. The other tabs are unaffected. |
 | Tab 4 shows an error about `tabpfn-client` | `pip install tabpfn-client==0.6.0` (it pins pandas ≤ 2.3.3). |
 | Slow first load | Normal: 65 MB of CSVs are parsed once and cached. |
-| `use_container_width` deprecation notice in the terminal | Harmless on Streamlit ≥ 1.62; the app runs on 1.38+. |

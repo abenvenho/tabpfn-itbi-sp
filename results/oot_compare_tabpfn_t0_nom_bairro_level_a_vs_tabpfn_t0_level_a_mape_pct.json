@@ -1,0 +1,22 @@
+{
+  "a": "tabpfn_t0_nom_bairro_level_a",
+  "b": "tabpfn_t0_level_a",
+  "metric": "mape_pct",
+  "seed": 42,
+  "wilcoxon_blocks": {
+    "n_folds": 10,
+    "statistic": 0.0,
+    "p_value": 0.001953125,
+    "mean_diff": 0.1303958230941035
+  },
+  "block_bootstrap": {
+    "metric": "mape_pct",
+    "n_boot": 2000,
+    "diff": 0.11968063565880627,
+    "ci95": [
+      0.07250479035619284,
+      0.1790337405213387
+    ],
+    "p_boot_two_sided": 0.0
+  }
+}

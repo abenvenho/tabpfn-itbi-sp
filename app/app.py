@@ -49,6 +49,7 @@ DTYPES = {"sql": str, "cep": str, "setor": str, "setor_quadra": str,
 T0_NUMERIC = ["area_construida_m2", "area_terreno_m2", "idade", "padrao_nivel",
               "dist_estacao_m", "mes_idx", "lat", "lon"]
 T0_CATEGORICAL = ["tipo_imovel"]
+PROPERTY_TYPES = ["apartment", "commercial", "house"]   # category order of the training table
 
 st.set_page_config(page_title="Location, location, location — TabPFN-3.5 on São Paulo",
                    page_icon="📍", layout="wide")
@@ -244,7 +245,7 @@ autocorrelation in its residuals** (Moran's I) than the models that see space.
         "Model": cv["model"].map(label),
         "RMSE (ln)": cv["rmse_ln"].round(3), "MAPE": (cv["mape_pct"]).round(1).astype(str) + " %",
         "R² (ln)": cv["r2_ln"].round(3), "Moran's I of residuals": cv["moran_I"].round(3)})
-    st.dataframe(cv_show, hide_index=True, use_container_width=True)
+    st.dataframe(cv_show, hide_index=True, width="stretch")
 
     st.markdown(f"#### Leg 2 — out-of-time, fit on 2025 ({'Level A, 24,000 rows' if train_base == 'level_a' else 'full base, 82,187 rows'}), predict the 47,810 transactions of 2026")
     oot = pd.DataFrame([{k: v for k, v in r.items() if k not in ("per_block", "per_month")} for r in metrics[f"oot_{train_base}"]])
@@ -252,7 +253,7 @@ autocorrelation in its residuals** (Moran's I) than the models that see space.
         "Model": oot["model"].map(label), "RMSE (ln)": oot["rmse_ln"].round(3),
         "MAPE": oot["mape_pct"].round(1).astype(str) + " %", "R² (ln)": oot["r2_ln"].round(3),
         "Bias (ln, + = under-predicted)": oot["bias_ln"].round(3), "Moran's I of residuals": oot["moran_I"].round(3)})
-    st.dataframe(oot_show, hide_index=True, use_container_width=True)
+    st.dataframe(oot_show, hide_index=True, width="stretch")
 
     g1, g2 = st.columns(2)
     with g1:
@@ -265,7 +266,7 @@ autocorrelation in its residuals** (Moran's I) than the models that see space.
         fig.update_layout(barmode="group", bargap=0.25, bargroupgap=0.08, title="RMSE (ln) per spatial block — 2026",
                           yaxis_title="RMSE (ln)", xaxis_title=None)
         fig.update_xaxes(tickprefix="block ")
-        st.plotly_chart(base_layout(fig, height=400), use_container_width=True)
+        st.plotly_chart(base_layout(fig, height=400), width="stretch")
     with g2:
         pc = metrics[f"paired_oot_{train_base}"]
         pc = pc[(pc["a"] == "tabpfn_t0") & (pc["metric"] == "rmse_ln") & pc["b"].isin(ORDER)]
@@ -280,7 +281,7 @@ autocorrelation in its residuals** (Moran's I) than the models that see space.
         fig.add_vline(x=0, line_color=MUTED, line_dash="dot")
         fig.update_layout(title="TabPFN-3.5 minus each baseline — ΔRMSE (ln), 2026",
                           xaxis_title="ΔRMSE (ln) with block-bootstrap 95 % CI · negative = TabPFN better")
-        st.plotly_chart(base_layout(fig, height=400), use_container_width=True)
+        st.plotly_chart(base_layout(fig, height=400), width="stretch")
     st.caption("Paired over the ten 2026 blocks; Wilcoxon p = 0.002 for every pair shown (10 of 10 blocks). "
                "Numbers are read from `results/oot_*.json` and `results/oot_paired_comparisons_*.csv`.")
 
@@ -335,7 +336,7 @@ with tab_map:
                             colorbar=dict(title="residual (ln)", thickness=12), opacity=0.75),
                 customdata=np.c_[s["sql"], s["tipo_imovel"], s["vu"].round(0), s[res_col]], showlegend=False,
                 hovertemplate="SQL %{customdata[0]} · %{customdata[1]}<br>R$/m² %{customdata[2]:,.0f}<br>residual %{customdata[3]:+.3f}<extra></extra>")]
-        st.plotly_chart(geo_figure(traces, (-23.60, -46.62), 9.6, 620, basemap, span=0.24), use_container_width=True)
+        st.plotly_chart(geo_figure(traces, (-23.60, -46.62), 9.6, 620, basemap, span=0.24), width="stretch")
 
     st.markdown("#### Same map, all four models — RMSE (ln) per block")
     per_block = []
@@ -346,7 +347,7 @@ with tab_map:
     pb = pd.concat(per_block)
     pv = pb.pivot(index="block", columns="model", values="rmse_ln").round(3)[[MODELS[m][1] for m in ORDER if MODELS[m][1] in pb["model"].unique()]]
     pv.insert(0, "n (2026)", pb.groupby("block")["n"].first())
-    st.dataframe(pv, use_container_width=True)
+    st.dataframe(pv, width="stretch")
     st.caption("Filters in the sidebar do not apply to this block table (it is the versioned per-block result).")
 
 
@@ -391,7 +392,7 @@ with tab_prop:
             "value": [f"{row['area_construida_m2']:,.0f}", f"{row['area_terreno_m2']:,.0f}", f"{row['idade']:.0f}",
                       f"{row['padrao_nivel']:.0f}", f"{row['dist_estacao_m']:,.0f}", f"{row['data_transacao']:%Y-%m-%d}",
                       "yes" if row["financiado"] else "no", brl(row["valor_transacao"]), f"{row['vu']:,.0f}"]})
-        st.dataframe(attrs, hide_index=True, use_container_width=True)
+        st.dataframe(attrs, hide_index=True, width="stretch")
 
     with b:
         st.markdown("#### What each model said")
@@ -412,12 +413,12 @@ with tab_prop:
         fig.add_hline(y=row["vu"], line_color=INK, line_dash="dash",
                       annotation_text=f"declared: R$ {row['vu']:,.0f}/m²", annotation_position="top left")
         fig.update_layout(title="Estimated unit value vs the declared price", yaxis_title="R$/m²", bargap=0.35)
-        st.plotly_chart(base_layout(fig, height=330), use_container_width=True)
+        st.plotly_chart(base_layout(fig, height=330), width="stretch")
         show = recs.copy()
         show["Estimated R$/m²"] = show["Estimated R$/m²"].map(lambda v: f"{v:,.0f}")
         show["Estimated total"] = show["Estimated total"].map(brl)
         show["Error vs declared"] = show["Error vs declared"].map(lambda v: f"{100 * v:+.1f} %")
-        st.dataframe(show, hide_index=True, use_container_width=True)
+        st.dataframe(show, hide_index=True, width="stretch")
 
     c, d = st.columns(2)
     with c:
@@ -431,7 +432,7 @@ with tab_prop:
                                 "built m²": nn["area_construida_m2"], "age": nn["idade"].round(0).astype(int),
                                 "grade": nn["padrao_nivel"], "month": nn["data_transacao"].dt.strftime("%Y-%m"),
                                 "R$/m²": np.exp(nn["ln_vu"]).round(0).astype(int)})
-        st.dataframe(nn_show, hide_index=True, use_container_width=True)
+        st.dataframe(nn_show, hide_index=True, width="stretch")
         med = float(np.exp(nn["ln_vu"]).median())
         st.caption(f"Median unit value of the eight: R\\$ {med:,.0f}/m² — vs declared R\\$ {row['vu']:,.0f}/m². "
                    "Distance 0 m = same fiscal block: coordinates are block centroids, so a building's own 2025 sales come first.")
@@ -444,7 +445,7 @@ with tab_prop:
                   dict(lat=[row["lat"]], lon=[row["lon"]], mode="markers", marker=dict(size=16, color="#eb6834"),
                        name="this property", hovertemplate="this property<extra></extra>")]
         span = max(0.004, 1.2 * float(np.max(np.abs(ctx[["lat", "lon"]].to_numpy() - [row["lat"], row["lon"]]))))
-        st.plotly_chart(geo_figure(traces, (row["lat"], row["lon"]), 14, 320, basemap, span=span), use_container_width=True)
+        st.plotly_chart(geo_figure(traces, (row["lat"], row["lon"]), 14, 320, basemap, span=span), width="stretch")
     with d:
         st.markdown("#### Why TabPFN-3.5 landed there — SHAP")
         if srow is None:
@@ -469,7 +470,7 @@ with tab_prop:
             fig.update_traces(cliponaxis=False)
             fig.update_layout(title=f"Contribution to ln(R$/m²) · base {np.exp(base):,.0f} → estimate {np.exp(pred):,.0f} R$/m²",
                               xaxis_title="SHAP value (ln); label = multiplier on R$/m²")
-            st.plotly_chart(base_layout(fig, height=380), use_container_width=True)
+            st.plotly_chart(base_layout(fig, height=380), width="stretch")
             st.caption("Permutation SHAP against a 20-row background, model reloaded from its cached record. "
                        "Red pushes the unit value up, blue pulls it down; exp(SHAP) is the multiplicative effect.")
 
@@ -494,16 +495,14 @@ LIVE_BASES = {
 }
 
 
-@st.cache_resource(show_spinner="Connecting to TabPFN-3.5 and preparing the model (10–20 s the first time)…")
-def get_live_model(token: str, base: str):
-    """Reload the cached fitted record for ``base`` if the account allows it, else fit on those rows."""
-    os.environ["TABPFN_TOKEN"] = token
+@st.cache_resource(show_spinner=False)
+def _live_models() -> dict:
+    """base -> (fitted estimator, how it was obtained); shared by the sessions of this server."""
+    return {}
+
+
+def _fresh_fit(base: str):
     from tabpfn_client import TabPFNRegressor  # noqa: WPS433 (optional dependency)
-    rec = RESULTS / "tabpfn_cache" / LIVE_BASES[base][1] / "blockall_seed42_model.json"
-    try:
-        return TabPFNRegressor.load_model(rec), "cached record (the exact model evaluated in the study)"
-    except Exception:
-        pass
     tr = load_train(base)
     X = tr[T0_NUMERIC + T0_CATEGORICAL].copy()
     X["area_terreno_m2"] = X["area_terreno_m2"].fillna(0.0)
@@ -512,6 +511,35 @@ def get_live_model(token: str, base: str):
                                                     ignore_pretraining_limits=(base == "full"))
     m.fit(X, tr["ln_vu"].to_numpy(float))
     return m, f"fresh fit on {len(X):,} rows (same features, same seed as the study)"
+
+
+def live_predict(token: str, base: str, X: pd.DataFrame) -> tuple[np.ndarray, str]:
+    """Predict with the cached fitted record of ``base`` when the server still has it for this
+    account, otherwise with a fresh fit on the same rows.
+
+    ``load_model`` makes no request: a record that was fitted under another account, or that the
+    server has dropped, only fails at the first ``predict``. That failure is caught here and the
+    model is fitted again, once per base and server process.
+    """
+    os.environ["TABPFN_TOKEN"] = token
+    from tabpfn_client import TabPFNRegressor  # noqa: WPS433 (optional dependency)
+    store = _live_models()
+    if base not in store:
+        rec = RESULTS / "tabpfn_cache" / LIVE_BASES[base][1] / "blockall_seed42_model.json"
+        try:
+            store[base] = (TabPFNRegressor.load_model(rec),
+                           "cached record (the exact model evaluated in the study)")
+        except Exception:
+            store[base] = _fresh_fit(base)
+    model, how = store[base]
+    try:
+        return np.asarray(model.predict(X), dtype=float), how
+    except Exception:
+        if not how.startswith("cached record"):
+            raise
+    store[base] = _fresh_fit(base)
+    model, how = store[base]
+    return np.asarray(model.predict(X), dtype=float), how
 
 
 with tab_appraise:
@@ -546,12 +574,18 @@ with tab_appraise:
                 mes = f3.selectbox("Price level as of", ["Dec 2025 (end of the training window)"])
                 go_btn = st.form_submit_button("Estimate")
             if go_btn:
-                model_live, how = get_live_model(tok, live_base)
                 X = pd.DataFrame([{"area_construida_m2": area_c, "area_terreno_m2": area_t, "idade": idade,
                                    "padrao_nivel": float(padrao), "dist_estacao_m": dist, "mes_idx": 12.0,
                                    "lat": lat, "lon": lon, "tipo_imovel": tipo}])
-                X["tipo_imovel"] = X["tipo_imovel"].astype("category")
-                yh = float(np.asarray(model_live.predict(X))[0])
+                # same category levels as the training table, not the single level of this one row
+                X["tipo_imovel"] = pd.Categorical(X["tipo_imovel"], categories=PROPERTY_TYPES)
+                try:
+                    with st.spinner("Asking TabPFN-3.5 (10–20 s the first time a base is used)…"):
+                        pred, how = live_predict(tok, live_base, X)
+                except Exception as e:  # noqa: BLE001 (quota, network, revoked token: say so, no traceback)
+                    st.error(f"The Prior Labs API call failed — {type(e).__name__}: {str(e)[:500]}")
+                    st.stop()
+                yh = float(pred[0])
                 vu = float(np.exp(yh))
                 k1, k2, k3 = st.columns(3)
                 k1.metric("Unit value", f"R$ {vu:,.0f}/m²")
@@ -567,7 +601,7 @@ with tab_appraise:
                                            "age": nn["idade"].round(0).astype(int), "grade": nn["padrao_nivel"],
                                            "month": nn["data_transacao"].dt.strftime("%Y-%m"),
                                            "R$/m²": np.exp(nn["ln_vu"]).round(0).astype(int)}),
-                             hide_index=True, use_container_width=True)
+                             hide_index=True, width="stretch")
                 st.caption("Estimate at the December-2025 price level, from declared ITBI prices of 2025. The study measured "
                            "a MAPE of ~20 % for this model on 2026 transactions and a systematic under-prediction of ~5 % "
                            "(rising market). No trend adjustment is applied. Not an appraisal report.")

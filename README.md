@@ -3,7 +3,7 @@
 *TabPFN-3.5 with the plain table vs models that see space explicitly, on 82,187 real transaction
 prices from São Paulo, tested one year ahead on 47,810 more.*
 
-Prior Labs TabPFN-3.5 Hackathon entry · [Streamlit app](app/MANUAL.md) · Apache-2.0
+Prior Labs TabPFN-3.5 Hackathon entry · **Live app: [tabpfn-itbi-sp.streamlit.app](https://tabpfn-itbi-sp.streamlit.app)** · [app manual](app/MANUAL.md) · Apache-2.0
 
 ---
 
@@ -26,8 +26,15 @@ its own? Does it match the specialists that were built for exactly this?
 * Predicting a part of the city it has never seen (leave-one-block-out CV), it ties XGBoost+lag on
   error and beats SAR, but leaves *more* spatial structure in its residuals than XGBoost with the
   explicit lag. That is a partial refutation, and it is reported as one.
+* **Take the coordinates away and give it only the raw postal code** — the CEP, Brazil's ZIP code,
+  as a text column with 15,938 distinct values and no geometry — and one year ahead it still beats
+  both spatial specialists in 10 of 10 blocks, against every XGBoost seed, and still leaves less
+  spatial autocorrelation in its residuals than either (full base: RMSE 0.268 vs 0.283–0.294 and
+  0.326; Moran's I 0.091 vs 0.103–0.107 and 0.134). A categorical label is enough for the model to do
+  the spatial analysis itself. For a part of the city it has never seen it is not: there only
+  coordinates extrapolate. [Details](#spatial-analysis-from-a-zip-code).
 
-Everything below is how those two sentences were earned.
+Everything below is how those claims were earned.
 
 ## The bet, written so it can lose
 
@@ -129,8 +136,8 @@ TabPFN − XGBoost+lag per block, negative everywhere.*
 | OLS hedonic | 0.470 | 39.4 % | 0.066 | 0.390 |
 | SAR lag, GM_Lag (ρ = 0.91) | 0.448 | 38.4 % | 0.155 | 0.363 |
 | XGBoost + rotated coordinates, no lag (ablation) | 0.397 | 33.3 % | 0.334 | 0.355 |
-| **XGBoost + rotated coordinates + k-NN-8 lag** | **0.385** (seeds 0.384–0.387) | 32.3 % | **0.376** | **0.309** |
-| **TabPFN-3.5, plain table, zero-shot** | 0.394 (seeds 0.390–0.394) | 32.2 % | 0.346 | 0.348 |
+| **XGBoost + rotated coordinates + k-NN-8 lag** | **0.385** (seeds 0.385–0.387) | 32.3 % | **0.376** | **0.309** |
+| **TabPFN-3.5, plain table, zero-shot** | 0.394 (seeds 0.391–0.394) | 32.2 % | 0.346 | 0.348 |
 | TabPFN-3.5, plain table, thinking (medium) | 0.389 | **31.7 %** | 0.362 | 0.342 |
 | TabPFN-3.5, plain table, thinking (high) | 0.388 | **31.7 %** | 0.366 | 0.339 |
 
@@ -163,7 +170,7 @@ of spatial structure behind.
 |---|---|---|---|---|---|
 | OLS hedonic | 0.402 | 32.4 % | 0.194 | +0.023 | 0.397 |
 | SAR lag | 0.326 | 25.0 % | 0.470 | +0.031 | 0.134 |
-| XGBoost + rotated coordinates + k-NN-8 lag | 0.287 (seeds 0.280–0.294) | 21.0 % | 0.59 | +0.07 to +0.10 | 0.105 |
+| XGBoost + rotated coordinates + k-NN-8 lag | 0.287 (seeds 0.283–0.294) | 21.0 % | 0.59 | +0.07 to +0.10 | 0.105 |
 | **TabPFN-3.5, plain table, zero-shot** (fit in 15 s) | **0.265** | **19.5 %** | **0.649** | +0.058 | **0.092** |
 
 ![Predicted vs observed ln unit price on the 2026 transactions](results/figures/fig3_pred_vs_obs_2026.png)
@@ -221,7 +228,9 @@ estimate, as an appraiser would read it.*
 Longitude (mean |SHAP| 0.184, a typical ×1.20 on the unit value) and latitude (0.143, ×1.15) are the
 two strongest inputs, ahead of property type (0.127), built area (0.112) and age (0.082). That is the
 bet seen from inside the model: the two raw coordinates carry the spatial signal the baselines have
-to encode with a weights matrix. Directions are the ones an appraiser expects: older buildings and
+to encode with a weights matrix. What they carry is location rather than geometry: with a
+[raw postal code in their place](#spatial-analysis-from-a-zip-code) the model loses almost nothing
+inside the market it has seen. Directions are the ones an appraiser expects: older buildings and
 longer walks to a station pull the unit value down, higher finish grades push it up, larger built
 areas lower the price per square metre.
 
@@ -246,9 +255,168 @@ p = 0.049, 8 of 10 blocks (a tie on the full Level A); 2026 vs XGBoost −0.013 
 spatial structure than XGBoost+lag in both legs. Nothing in the headline results depends on the cash
 deals; if anything, the noisier cash prices are where the explicitly spatial learner holds its own.
 
+## Ablation — the address as well as the coordinates
+
+The ITBI form states location twice: as the coordinates the main analysis uses, and as names — a
+free-text district field (`bairro`) and the postal code (`cep`). TabPFN-3.5 takes high-cardinality
+string columns as they come, and none of the runs above uses that. This ablation adds the two names
+to the plain table and changes nothing else: same rows, same folds, same seed, zero-shot. It stays
+outside the main analysis because it changes the information set, and the baselines are not re-run
+with these columns (`scripts/50_nominal_location_ablation.sh`, `results/nominal_ablation_summary.md`).
+
+The columns go in as filed. `cep` has 10,022 distinct values in the 24,000 rows of Level A. `bairro`
+has 3,898, is empty in 39 % of the rows, and about a quarter of what is filled in is a tower or block
+label typed into the wrong field. Nothing is cleaned.
+
+Two expectations were written into `src/model_tabpfn.py` before the runs. Leg 1 should show nothing:
+97–100 % of a held-out block's postal codes are absent from the training folds by construction, so
+it is a negative control. Leg 2 is where names could help, and if they do, the gain should sit in
+the 2026 rows whose code occurs in the training base.
+
+ΔRMSE (ln) against the plain table, 95 % CI by block bootstrap; negative is better:
+
+| | plain table | + bairro | + cep | + bairro + cep |
+|---|---|---|---|---|
+| Leg 1, block CV on Level A | 0.3938 | −0.0004 [−0.0037, +0.0036] | +0.0051 [−0.0106, +0.0259] | −0.0027 [−0.0110, +0.0101] |
+| Leg 2, fit on Level A (24k) → 2026 | 0.2750 | +0.0019 [+0.0014, +0.0025] | +0.0012 [+0.0003, +0.0021] | +0.0017 [+0.0004, +0.0027] |
+| Leg 2, fit on the full base (82k) → 2026 | 0.2649 | −0.0001 [−0.0006, +0.0003] | −0.0012 [−0.0018, −0.0006] | −0.0020 [−0.0031, −0.0009] |
+
+The names add nothing that matters. Leg 1 is flat, as it had to be. In leg 2 they cost about 0.002
+on 24,000 rows and return about 0.002 on 82,000, under 1 % of the RMSE in either direction. MAPE
+moves by at most 0.3 points (20.4 % → 20.5–20.7 %; 19.5 % → 19.4–19.5 %), Moran's I of the residuals
+by at most 0.008 (0.122 → 0.122–0.130; 0.092 → 0.088–0.093), and the margin over XGBoost+lag is
+where it was (−0.012 on 24k, −0.030 on 82k). Several of those intervals exclude zero, but they
+resample the test blocks under a single seed; three seeds of the plain-table model in leg 1 span
+0.3907–0.3938, a range wider than any difference in the leg-2 rows. Read as a whole: no effect.
+
+The reason is in the data. Coordinates here are fiscal-block centroids, 10,242 distinct points in
+Level A against 10,022 postal codes, and nine codes in ten span less than about 320 m. The postal
+code is close to a second spelling of the coordinate pair the model already has, with 2.4 rows per
+code in Level A and 5.2 in the full base to learn it from. That the sign turns from cost to gain as
+the rows per code double fits this reading; so does the split by seen and unseen codes on the full
+base (−0.0013 [−0.0019, −0.0007] where the code occurs in training, −0.0006 [−0.0023, +0.0011] where
+it does not), though the two intervals overlap and the check does not settle it.
+
+Two side observations. Declaring the columns categorical (`categorical_features_indices`) instead of
+sending plain strings returned byte-identical predictions from a separate fit: the server already
+treats them as categories. And the mean under-prediction of 2026 drops by a fifth to a quarter with
+both names in (bias +0.055 → +0.045 in ln on Level A, +0.058 → +0.043 on the full base) while the RMSE
+stays put; we report it without an explanation.
+
+For the bet, this is the useful negative result: two raw numeric columns already carry what the
+address carries. The converse test, the postal code *instead of* the coordinates, is the next section.
+
+## Spatial analysis from a ZIP code
+
+*No coordinates at all: the raw postal code as a text column in their place, against the spatial
+specialists with every one of their spatial inputs.*
+
+The CEP (*Código de Endereçamento Postal*) is Brazil's ZIP code: eight digits, written `01310-100`,
+assigned by the postal service, in São Paulo usually to a single street or a stretch of one. It is
+on every tax form, deed and listing, and using it needs no geocoding. To a model it is a nominal
+variable of very high cardinality: 10,022 distinct values in the 24,000 rows of Level A, 15,938 in
+the full 2025 base (about five transactions per code there), and nothing in the column says which
+code lies next to which.
+
+The test takes the plain table, removes latitude and longitude, and puts the postal code in their
+place as a string, so that it cannot be read as a number. In the strict version the distance to the
+nearest station goes as well, because it is computed from the coordinates; the postal code is then
+the only spatial information TabPFN-3.5 receives. The baselines are untouched: SAR keeps its k-NN-8
+weights matrix and ρ; XGBoost keeps the k-NN-8 spatial lag, the rotated coordinates, the station
+distance and the nested tuning. Same rows, folds and blocks, zero-shot, seed 42
+(`scripts/50_nominal_location_ablation.sh replace`). One side models space with coordinates,
+neighbours and a weights matrix; the other is handed a label.
+
+**One year ahead, the label wins.** Leg 2, postal code only:
+
+| Trained on | Model | Sees space through | RMSE (ln) | MAPE | Moran's I of residuals |
+|---|---|---|---|---|---|
+| Level A (24k) | SAR lag | k-NN-8 weights matrix, ρ | 0.346 | 27.0 % | 0.224 |
+| | XGBoost + spatial features | k-NN-8 lag, rotated coordinates, station distance | 0.288 | 21.8 % | 0.138–0.140 |
+| | **TabPFN-3.5, postal code only** | **one text column** | **0.277** | **20.7 %** | **0.129** |
+| Full base (82k) | SAR lag | k-NN-8 weights matrix, ρ | 0.326 | 25.0 % | 0.134 |
+| | XGBoost + spatial features | k-NN-8 lag, rotated coordinates, station distance | 0.283–0.294 | 20.9–21.5 % | 0.103–0.107 |
+| | **TabPFN-3.5, postal code only** | **one text column** | **0.268** | **19.8 %** | **0.091** |
+
+*XGBoost: range over its three seeds.*
+
+Paired over the ten spatial blocks: ΔRMSE in ln (TabPFN − opponent), 95 % CI by block bootstrap,
+blocks won (`scripts/51_postal_code_vs_baselines.py`, `results/postal_code_vs_baselines.md`):
+
+| TabPFN-3.5, postal code only, against | fit on Level A (24k) | fit on the full base (82k) |
+|---|---|---|
+| XGBoost + lag, seed 42 (the run in the main paired tests) | −0.0114 [−0.0132, −0.0096] · 10/10 | −0.0255 [−0.0292, −0.0222] · 10/10 |
+| XGBoost + lag, its best seed | −0.0112 [−0.0129, −0.0092] · 10/10 | −0.0141 [−0.0170, −0.0115] · 10/10 |
+| SAR lag | −0.0688 [−0.0760, −0.0614] · 10/10 | −0.0572 [−0.0626, −0.0514] · 10/10 |
+
+Wilcoxon p = 0.002 in every row. MAPE falls by 1.1 to 1.8 points against XGBoost and by 5.3 to 6.3
+against SAR.
+
+Every refutation criterion of the bet is passed, at both training scales and against every seed, by
+a model that never saw a coordinate. That includes the sharpest one: it leaves less spatial
+autocorrelation in its residuals than the two models built to capture it. The Moran's I is computed
+on a k-NN-8 matrix of the very coordinates the model was denied, so it is graded on a neighbourhood
+structure it was never shown.
+
+**A categorical column doing the spatial work.** Nothing was built around the code: no target
+encoding, no embedding, no neighbour list, no lookup of coordinates. The string goes to the API as it
+is, and the server treats it as a category (declaring it categorical returned byte-identical
+predictions in the ablation above). A lookup table of prices by code could not price a code it has
+never seen; this model does. On the 2026 transactions whose code never occurs in the training base,
+22 % of them against Level A and 9 % against the full base, the postal-code-only model still recovers
+97 % and 96 % of the way from its no-location floor to the coordinate model, about as much as on the
+codes it has seen (98 % and 94 %). Why is not settled. The leading hypothesis is order: Brazilian
+postal codes are assigned geographically, so neighbouring codes mostly mean neighbouring streets. The
+test that would settle it has not been run (see [What is not here](#what-is-not-here-and-why)).
+
+**Is it the model, or the code?** The postal code is information the baselines were not given, so
+the objection is fair. Two results answer it. Without the code, the same model with nothing spatial
+falls well behind XGBoost (0.352 on Level A, 0.327 on the full base): the code is what carries
+location. And it carries no more location than the coordinate pair: inside TabPFN it comes within
+0.004 of what latitude and longitude give (0.277 vs 0.275; 0.268 vs 0.265), and the ablation above
+found that it adds nothing on top of them. XGBoost had the coordinate pair and, on top of it, a
+spatial lag, rotated axes and the station distance. The location information is no richer on
+TabPFN's side and all the spatial engineering is on the other: the difference is the model.
+
+**Where it stops: a part of the city never seen.** In the leave-one-block-out CV (leg 1) a held-out
+block's postal codes are absent from training by construction (97–100 %). There the code carries
+nothing, and worse than nothing. The postal-code-only model lands below its own no-location floor
+(RMSE 0.457 vs 0.440), loses to XGBoost+lag on pooled error (+0.069 to +0.072 in ln across its three
+seeds, intervals just clear of zero, 4 of 10 blocks won), ties SAR (+0.009 [−0.074, +0.069], 8 of 10
+blocks) and leaves the most spatial autocorrelation of any model in the study (Moran's I 0.502,
+against 0.390 for OLS). A whole block of codes the model has never seen is priced as one unknown, the
+error shifts as a block, and Moran's I measures exactly that. Coordinates extrapolate into an unseen
+district; a label cannot. The written expectation for this leg was that the code would fall to the
+floor; it fell below it.
+
+**Against the expectations written before the runs** (`src/model_tabpfn.py`). The postal-code-only
+variant was expected to recover less than half of the way to the plain table and to lose to
+XGBoost+lag in both legs. In leg 2 it recovered 97 % (24k) and 94 % (82k) and won every block. The
+trigger stated in advance, "a name-based input that matches the plain table in leg 2", fired, and the
+claim changes as announced: within a market the model has seen, it is not two raw coordinate columns
+that carry the spatial signal but any fine-grained location identifier, a raw text code included.
+For the bet this is the same claim in a stronger form: no weights matrix, no lag, no engineered
+neighbourhood features and, inside the market, not even coordinates.
+
+The other descriptors (`results/location_descriptor_summary.md`): the code with the station distance
+kept does as well (0.277 / 0.264, 10 of 10 blocks against XGBoost and against SAR); the code read as
+a number does as well as the string; the free-text district field recovers only 16–19 %, being empty
+in 38 % of the 2026 forms; and the distance to a station alone carries about 40 % (24k) and 50 %
+(82k) of the location signal in leg 2.
+
+**Limits of the reading.** The TabPFN runs are single-seed; its seed spread in leg 1 is 0.003 in ln,
+far below every leg-2 margin above. The mean under-prediction of 2026 is about that of the
+coordinate model (bias +0.048 and +0.064 in ln, against +0.055 and +0.058) and larger than SAR's
+(+0.03). And the result holds for valuation inside an observed market; leg 1 is where it does not.
+
+For practice the reading is simple. Inside a market with a sales history, the model prices location
+from the postal code already on the tax form, with no geocoder, no neighbour list and no weights
+matrix, and leaves less spatial structure in its errors than the models that build one. For a region
+with no sales in the training base, geocode.
+
 ## The app
 
-`streamlit run app/app.py` opens four tabs on the versioned results: the claim and scoreboard, a map
+Live at [tabpfn-itbi-sp.streamlit.app](https://tabpfn-itbi-sp.streamlit.app), or `streamlit run app/app.py` locally. Four tabs on the versioned results: the claim and scoreboard, a map
 of where each model fails on the 2026 transactions, an inspector for any single transaction (four
 estimates, the k-NN-8 neighbourhood the baselines saw, SHAP for the 50 explained properties), and,
 with a `TABPFN_TOKEN`, a live TabPFN-3.5 estimate for a property you describe. Install, deploy and
@@ -281,6 +449,10 @@ bash scripts/20_tabpfn_out_of_time.sh t0 && bash scripts/20_tabpfn_out_of_time.s
 python -m src.make_figures                          # figures from the versioned results, no model re-run
 bash scripts/30_tabpfn_shap.sh run && python -m src.make_figures --shap
 bash scripts/40_financed_robustness.sh baselines && bash scripts/40_financed_robustness.sh tabpfn
+bash scripts/50_nominal_location_ablation.sh all    # ablation: district and postal code as string columns
+bash scripts/50_nominal_location_ablation.sh replace   # a name in place of the coordinates
+python scripts/51_postal_code_vs_baselines.py          # postal code only vs every XGBoost seed and SAR (no API)
+python scripts/60_app_live_check.py                 # presses Estimate in tab 4 of the app, headless
 ```
 
 Every TabPFN-3.5 response is cached under `results/tabpfn_cache/<label>/`, so the protocol re-runs
@@ -333,6 +505,10 @@ notebooks/  side experiments
 * **Prediction intervals and NBR 14653-2 precision grades.** Predictive quantiles are cached for the
   zero-shot fits; the coverage analysis is future work.
 * **Trend correction.** See the limitation above.
+* **Why postal codes never seen in training still work.** Replacing each code with a random one under
+  a fixed bijection keeps the identities and destroys the geographic order; if the unseen codes then
+  fall to the floor while the seen ones hold, the model is reading the order of the codes. Designed,
+  not run.
 
 ## License and citation
 

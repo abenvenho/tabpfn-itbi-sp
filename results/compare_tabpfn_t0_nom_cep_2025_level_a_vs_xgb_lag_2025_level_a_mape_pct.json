@@ -1,0 +1,22 @@
+{
+  "a": "tabpfn_t0_nom_cep_2025_level_a",
+  "b": "xgb_lag_2025_level_a",
+  "metric": "mape_pct",
+  "seed": 42,
+  "wilcoxon": {
+    "n_folds": 10,
+    "statistic": 17.0,
+    "p_value": 0.322265625,
+    "mean_diff": -1.210461614720111
+  },
+  "block_bootstrap": {
+    "metric": "mape_pct",
+    "n_boot": 2000,
+    "diff": -0.06314816224381303,
+    "ci95": [
+      -3.4303934370187887,
+      3.218667458865834
+    ],
+    "p_boot_two_sided": 0.863
+  }
+}

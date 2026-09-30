@@ -1,0 +1,22 @@
+{
+  "a": "tabpfn_t0_nom_bairro_full",
+  "b": "xgb_lag_full",
+  "metric": "rmse_ln",
+  "seed": 42,
+  "wilcoxon_blocks": {
+    "n_folds": 10,
+    "statistic": 0.0,
+    "p_value": 0.001953125,
+    "mean_diff": -0.02892465638304
+  },
+  "block_bootstrap": {
+    "metric": "rmse_ln",
+    "n_boot": 2000,
+    "diff": -0.029249470630892282,
+    "ci95": [
+      -0.0323074395795006,
+      -0.02658636347077393
+    ],
+    "p_boot_two_sided": 0.0
+  }
+}

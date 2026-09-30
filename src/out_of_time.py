@@ -185,8 +185,18 @@ def make_factory(args, train_df: pd.DataFrame, out_dir: Path, label: str):
         return lambda seed: TabPFNT0Model(cache_dir, "all", seed=seed,
                                           thinking=args.thinking, group_col=group_col,
                                           quantiles=args.quantiles, chunk=args.chunk,
-                                          ignore_pretraining_limits=args.ignore_limits)
+                                          ignore_pretraining_limits=args.ignore_limits,
+                                          nominal=nominal_cols(args),
+                                          nominal_categorical=args.nominal_categorical,
+                                          coords=not args.no_coords,
+                                          station=not args.no_station)
     raise ValueError(args.model)
+
+
+def nominal_cols(args) -> tuple[str, ...]:
+    """Ablation columns in fixed order (``bairro``, ``cep``, ``cep_num``); empty for main runs."""
+    from .model_tabpfn import NOMINAL_COLUMNS
+    return tuple(c for c in NOMINAL_COLUMNS if c in (args.nominal or []))
 
 
 def default_label(args) -> str:
@@ -199,6 +209,9 @@ def default_label(args) -> str:
     else:
         base = ("tabpfn_t0" + ("" if args.thinking == "off" else f"_think_{args.thinking}")
                 + ("_grp" if args.group_col else ""))
+        from .model_tabpfn import nominal_tag
+        base += nominal_tag(nominal_cols(args), args.nominal_categorical,
+                            not args.no_coords, not args.no_station)
     return f"{base}_{args.train}" + ("_fin" if args.financed_only else "")
 
 
@@ -214,6 +227,14 @@ def main() -> None:
     ap.add_argument("--chunk", type=int, default=5000)
     ap.add_argument("--ignore-limits", action="store_true",
                     help="TabPFN: ignore_pretraining_limits (needed for the full 82k base)")
+    ap.add_argument("--nominal", nargs="*", default=[], choices=["bairro", "cep", "cep_num"],
+                    help="TabPFN ABLATION: add nominal-location columns as raw strings")
+    ap.add_argument("--nominal-categorical", action="store_true",
+                    help="TabPFN ablation variant: declare the nominal columns categorical")
+    ap.add_argument("--no-coords", action="store_true",
+                    help="TabPFN ABLATION: drop latitude and longitude")
+    ap.add_argument("--no-station", action="store_true",
+                    help="TabPFN ABLATION: also drop the distance to the nearest station")
     ap.add_argument("--label", default=None)
     ap.add_argument("--financed-only", action="store_true",
                     help="robustness: financed transactions only, in training and in 2026")

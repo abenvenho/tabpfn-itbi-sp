@@ -1,0 +1,12 @@
+{
+  "block": "6",
+  "seed": 42,
+  "n_train": 21068,
+  "thinking": "off",
+  "group_col": null,
+  "nominal": [],
+  "coordinates": false,
+  "station_distance": false,
+  "nominal_categorical": false,
+  "fit_s": 6.2
+}

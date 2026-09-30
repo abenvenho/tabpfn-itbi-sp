@@ -1,0 +1,13 @@
+{
+  "block": "9",
+  "seed": 42,
+  "n_train": 21488,
+  "thinking": "off",
+  "group_col": null,
+  "nominal": [
+    "bairro",
+    "cep"
+  ],
+  "nominal_categorical": false,
+  "fit_s": 21.3
+}
