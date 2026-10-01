@@ -6,22 +6,22 @@ model_xgb.py — gradient-boosting baseline with fold-internal spatial features
 Global XGBoost with spatial context, the machine-learning baseline of the
 comparison (SAR vs boosting vs TabPFN-3.5).
 
-Why not geographically weighted XGBoost (``geoxgboost``)?
----------------------------------------------------------
-The plan was to run G-XGBoost (Grekousis 2025, ``pip install geoxgboost``),
-one of the methods of the reference study on Belo Horizonte (5,005 rows).
-It was piloted and timed here, not assumed away: ``optimize_bw`` fits one
-local XGBoost with a GridSearchCV per *training row and per bandwidth
-candidate* over a dense n x n distance matrix. On a 200-row subsample one
-bandwidth candidate took 18.7 s (0.093 s per spatial unit); a real training
-fold has ~19-21k rows, so one candidate costs ~0.5 h, a modest grid of ten
-bandwidths over ten folds ~2 days, and each fold's dense distance matrix
-alone is ~2.9 GB (see ``results/gxgb_timing_pilot.json``). The package is
-designed for hundreds to a few thousand spatial units, not tens of
-thousands.
+Why a global learner here, and where the geographically weighted one is
+------------------------------------------------------------------------
+The reference study on Belo Horizonte used G-XGBoost (Grekousis 2025,
+``pip install geoxgboost``). As shipped, ``optimize_bw`` fits one local
+XGBoost with a GridSearchCV per *training row and per bandwidth candidate*
+over a dense n x n distance matrix: on a 200-row subsample one candidate took
+18.7 s (0.093 s per spatial unit), so a real fold of ~19-21k rows costs
+~0.5 h per candidate and ~2.9 GB of distance matrix
+(``results/gxgb_timing_pilot.json``). The geographically weighted estimator
+is therefore run in ``src/model_gxgb.py``, calibrated at regression points
+instead of at every row, as a second, separate baseline.
 
-The fallback keeps the *idea* — let the learner see space — in a form that
-scales:
+This module is the other kind of spatial learner: one global XGBoost that is
+*shown* space through fold-internal features.
+
+Its spatial inputs:
 
 * **Spatial-lag feature**: mean ``ln_vu`` of the 8 nearest TRAINING
   neighbours (``protocol.knn_spatial_lag``); for training rows the point

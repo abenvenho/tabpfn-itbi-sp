@@ -1,0 +1,13 @@
+{
+  "block": "9",
+  "seed": 42,
+  "n_train": 21488,
+  "thinking": "medium",
+  "group_col": "bloco",
+  "nominal": [],
+  "coordinates": true,
+  "station_distance": true,
+  "nominal_categorical": false,
+  "text": [],
+  "fit_s": 30.3
+}

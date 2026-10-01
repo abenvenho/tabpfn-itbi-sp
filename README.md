@@ -21,16 +21,20 @@ its own? Does it match the specialists that were built for exactly this?
 
 * Predicting one year ahead (fit on 2025, predict every cleaned 2026 transaction), TabPFN-3.5 with
   nine raw columns beats XGBoost with a hand-built spatial lag in 10 of 10 spatial blocks
-  (RMSE 0.265 vs 0.287 in ln, MAPE 19.5 % vs 21.0 %), beats the SAR lag model by a wide margin, and
-  leaves the *least* spatial autocorrelation in its residuals of the four models (Moran's I 0.092).
-* Predicting a part of the city it has never seen (leave-one-block-out CV), it ties XGBoost+lag on
-  error and beats SAR, but leaves *more* spatial structure in its residuals than XGBoost with the
-  explicit lag. That is a partial refutation, and it is reported as one.
+  (RMSE 0.265 vs 0.287 in ln, MAPE 19.5 % vs 21.0 %), beats a geographically weighted XGBoost in
+  9 of 10 (0.265 vs 0.298–0.301) and the SAR lag model by a wide margin, and leaves the *least*
+  spatial autocorrelation in its residuals of the five models (Moran's I 0.092).
+* Predicting a part of the city it has never seen (leave-one-block-out CV), it ties both XGBoost
+  models on error and beats SAR, but leaves *more* spatial structure in its residuals than either
+  XGBoost. That is a partial refutation, and it is reported as one. Reading the unit and building
+  text typed on the tax form closes the error gap (a tie with XGBoost+lag, a win over the
+  geographically weighted XGBoost) but not the residual one.
 * **Take the coordinates away and give it only the raw postal code** — the CEP, Brazil's ZIP code,
   as a text column with 15,938 distinct values and no geometry — and one year ahead it still beats
-  both spatial specialists in 10 of 10 blocks, against every XGBoost seed, and still leaves less
-  spatial autocorrelation in its residuals than either (full base: RMSE 0.268 vs 0.283–0.294 and
-  0.326; Moran's I 0.091 vs 0.103–0.107 and 0.134). A categorical label is enough for the model to do
+  all three spatial specialists, against every seed (10 of 10 blocks against XGBoost+lag and SAR,
+  9 or 10 of 10 against the geographically weighted XGBoost), and still leaves less spatial
+  autocorrelation in its residuals than any of them (full base: RMSE 0.268 vs 0.283–0.294, 0.298–0.301
+  and 0.326; Moran's I 0.091 vs 0.103–0.107, 0.163–0.166 and 0.134). A categorical label is enough for the model to do
   the spatial analysis itself. For a part of the city it has never seen it is not: there only
   coordinates extrapolate. [Details](#spatial-analysis-from-a-zip-code).
 
@@ -45,7 +49,8 @@ Everything below is how those claims were earned.
 
 The comparison is rigged against the bet. The baselines keep every spatial advantage: the SAR lag
 model has its k-NN weights matrix and ρ; XGBoost gets a fold-internal k-NN-8 spatial lag, rotated
-coordinate axes and nested Optuna tuning. TabPFN-3.5 gets the plain table (built and lot area, age,
+coordinate axes and nested Optuna tuning; a geographically weighted XGBoost fits its own local models
+across the city, with the bandwidth chosen by nested cross-validation. TabPFN-3.5 gets the plain table (built and lot area, age,
 finish grade, distance to the nearest station, month, property type, latitude, longitude), zero-shot,
 plus a thinking-mode variant. If it matches or beats the specialists, nobody can blame a weak baseline.
 
@@ -107,19 +112,27 @@ Paired tests over the ten blocks (Wilcoxon) and a block bootstrap for the pooled
 seeds where a model is stochastic. Leakage checks: zero identical transactions between 2026 and any
 2025 base; 0.6 % of 2026 rows share a cadastral key with Level A.
 
-The four models:
+The five models:
 
 | Model | Sees space through |
 |---|---|
 | OLS hedonic | nothing (coordinates as covariates only) |
 | SAR lag (`spreg` GM_Lag) | k-NN-8 weights matrix and ρ |
 | XGBoost + spatial features | fold-internal k-NN-8 lag (leave-one-out for training rows), UTM coordinates + 30°/45°/60° rotations, nested Optuna tuning |
+| Geographically weighted XGBoost | local XGBoost models, each fitted on the k nearest rows with bi-square distance weights, blended with a global model; k and the blend chosen by nested block CV |
 | **TabPFN-3.5, plain table** | latitude and longitude as two numeric columns; zero-shot or thinking mode |
 
-Geographically weighted XGBoost, one of the methods in the reference study, was piloted and timed
-(`src/pilot_gxgb_timing.py`): one local model per training row and per bandwidth candidate over a
-dense distance matrix, roughly 0.5 h per bandwidth at 20k rows and 2.9 GB of matrix per fold. Not
-feasible on this data; the XGBoost above is the scalable substitute that keeps the idea.
+Geographically weighted XGBoost (G-XGBoost, Grekousis 2025) is one of the methods of the reference
+study. As packaged (`geoxgboost`) it calibrates one local model, with its own grid search, at every
+training row over a dense distance matrix: the pilot (`src/pilot_gxgb_timing.py`) measured about
+0.5 h per bandwidth candidate per fold at 20k rows and 2.9 GB of matrix. `src/model_gxgb.py` keeps
+the estimator — local XGBoost models with adaptive bi-square weights, blended with a global XGBoost
+by a weight α — and calibrates the local models at 1,000 regression points (K-means centres of the
+training coordinates), as geographically weighted regression allows; a location is predicted by
+its three nearest local models. Like the original, the local models see the hedonic attributes and
+no coordinates: space enters only through the weighting. The bandwidth k (200 to 3,200 neighbours,
+scaled to the training size) and α are chosen by an inner block CV inside each outer fold. One fit
+takes about a minute; tuning, ten.
 
 ## Results
 
@@ -137,6 +150,7 @@ TabPFN − XGBoost+lag per block, negative everywhere.*
 | SAR lag, GM_Lag (ρ = 0.91) | 0.448 | 38.4 % | 0.155 | 0.363 |
 | XGBoost + rotated coordinates, no lag (ablation) | 0.397 | 33.3 % | 0.334 | 0.355 |
 | **XGBoost + rotated coordinates + k-NN-8 lag** | **0.385** (seeds 0.385–0.387) | 32.3 % | **0.376** | **0.309** |
+| Geographically weighted XGBoost (k ≈ 45, α = 0.5) | 0.410 (seeds 0.407–0.410) | 34.5 % | 0.291 | 0.324 |
 | **TabPFN-3.5, plain table, zero-shot** | 0.394 (seeds 0.391–0.394) | 32.2 % | 0.346 | 0.348 |
 | TabPFN-3.5, plain table, thinking (medium) | 0.389 | **31.7 %** | 0.362 | 0.342 |
 | TabPFN-3.5, plain table, thinking (high) | 0.388 | **31.7 %** | 0.366 | 0.339 |
@@ -144,11 +158,14 @@ TabPFN − XGBoost+lag per block, negative everywhere.*
 What the paired tests say (`results/compare_*.json`): TabPFN zero-shot beats SAR in 8 of 10 blocks
 (ΔRMSE −0.054, bootstrap 95 % CI [−0.100, −0.014], Wilcoxon p = 0.010). Against the fully spatial
 XGBoost it is a statistical tie: ΔRMSE +0.009 [−0.018, +0.034], 7 blocks won, one clear loss in the
-largest block. Thinking mode helps a little and consistently (−0.005 [−0.008, −0.001] vs zero-shot)
+largest block. Against the geographically weighted XGBoost it is also a tie, leaning its way:
+ΔRMSE −0.013 to −0.016 across that model's three seeds, intervals across zero, 6 or 7 blocks won.
+Thinking mode helps a little and consistently (−0.005 [−0.008, −0.001] vs zero-shot)
 and gives the lowest MAPE in the table; high effort costs 13× more per fold for nothing beyond noise.
 
 On the residual criterion the bet takes a hit. TabPFN's Moran's I (0.348) sits below SAR (0.363) but
-above XGBoost with the explicit lag (0.309). Inside XGBoost, the lag alone is worth ΔRMSE −0.013 and
+above XGBoost with the explicit lag (0.309) and above the geographically weighted XGBoost
+(0.319–0.326), whose local models are fitted on the nearest 40 to 176 rows. Inside XGBoost, the lag alone is worth ΔRMSE −0.013 and
 cuts Moran's I from 0.355 to 0.309: that is the price of *not* modelling space explicitly when the
 test is a part of the city nobody has seen. Partial refutation, on the record.
 
@@ -163,6 +180,7 @@ of spatial structure behind.
 | OLS hedonic | 0.404 | 32.4 % | 0.185 | +0.033 | 0.408 |
 | SAR lag | 0.346 | 27.0 % | 0.401 | +0.033 | 0.224 |
 | XGBoost + rotated coordinates + k-NN-8 lag | 0.288 | 21.8 % | 0.584 | +0.047 | 0.140 |
+| Geographically weighted XGBoost (k = 50, α = 0.5) | 0.314 | 24.0 % | 0.508 | +0.045 to +0.048 | 0.187 |
 | **TabPFN-3.5, plain table, zero-shot** (fit in 9 s) | **0.275** | **20.4 %** | **0.622** | +0.055 | **0.122** |
 | TabPFN-3.5, plain table, thinking (medium) | 0.275 | 20.5 % | 0.621 | +0.055 | 0.121 |
 
@@ -171,6 +189,7 @@ of spatial structure behind.
 | OLS hedonic | 0.402 | 32.4 % | 0.194 | +0.023 | 0.397 |
 | SAR lag | 0.326 | 25.0 % | 0.470 | +0.031 | 0.134 |
 | XGBoost + rotated coordinates + k-NN-8 lag | 0.287 (seeds 0.283–0.294) | 21.0 % | 0.59 | +0.07 to +0.10 | 0.105 |
+| Geographically weighted XGBoost (k = 342, α = 0.5) | 0.299 (seeds 0.298–0.301) | 22.1 % | 0.55 | +0.06 to +0.08 | 0.164 |
 | **TabPFN-3.5, plain table, zero-shot** (fit in 15 s) | **0.265** | **19.5 %** | **0.649** | +0.058 | **0.092** |
 
 ![Predicted vs observed ln unit price on the 2026 transactions](results/figures/fig3_pred_vs_obs_2026.png)
@@ -185,6 +204,15 @@ less residual autocorrelation (0.122 vs 0.140). On the full base the gap widens 
 to 82k rows improves TabPFN by −0.010 and SAR by −0.020; XGBoost does not improve (+0.006) because its
 trend bias doubles and eats the variance gain. Thinking mode adds nothing in this leg.
 
+The geographically weighted XGBoost lands between SAR and XGBoost+lag at both scales. TabPFN beats it
+by −0.038 to −0.039 across its three seeds in 10 of 10 blocks on Level A (every interval within
+[−0.049, −0.028]) and by −0.033 to −0.036 on the full base, where it wins 9 of 10 blocks (p = 0.004): the one loss is the smallest block,
+2,425 transactions, by 0.001–0.002. Its residuals keep more spatial autocorrelation (0.187 and 0.164)
+than XGBoost+lag's, as if the local models, which see no coordinates, averaged away the fine
+structure that the explicit lag and the plain coordinates keep. The bandwidth hardly matters here:
+with 400, 200, 100 or 50 neighbours, as the search grid was widened, its 2026 RMSE on Level A stays
+between 0.308 and 0.314 (`results/gxgb_bandwidth_sensitivity.json`).
+
 Errors are flat across blocks (0.25–0.32) and across horizons of one to seven months (0.26–0.29): no
 subset is carrying the result.
 
@@ -196,14 +224,14 @@ subset is carrying the result.
 ![Residual Moran's I, both legs](results/figures/fig5_moran.png)
 
 *Figure 4. Residual Moran's I. Left: the partial refutation in the block CV. Right: one year ahead,
-inside the city, the plain-table model leaves the least spatial structure of the four.*
+inside the city, the plain-table model leaves the least spatial structure of the models shown.*
 
 ![Mean residual by month ahead](results/figures/fig4_months_ahead_bias.png)
 
 *Figure 5. Mean residual by month after the training window, full 2025 base.*
 
-**The limitation worth stating.** Every model under-predicts 2026 (prices rose), and the two
-non-linear learners more so (bias +0.05 to +0.10 in ln vs +0.02 to +0.03 for the linear models):
+**The limitation worth stating.** Every model under-predicts 2026 (prices rose), and the
+non-linear learners more so (bias +0.04 to +0.10 in ln vs +0.02 to +0.03 for the linear models):
 trees and TabPFN hold the last observed level of the month index instead of extrapolating a trend.
 Appraisal practice would apply an index. It is reported here, not corrected.
 
@@ -323,7 +351,8 @@ place as a string, so that it cannot be read as a number. In the strict version 
 nearest station goes as well, because it is computed from the coordinates; the postal code is then
 the only spatial information TabPFN-3.5 receives. The baselines are untouched: SAR keeps its k-NN-8
 weights matrix and ρ; XGBoost keeps the k-NN-8 spatial lag, the rotated coordinates, the station
-distance and the nested tuning. Same rows, folds and blocks, zero-shot, seed 42
+distance and the nested tuning; the geographically weighted XGBoost keeps its local models. Same
+rows, folds and blocks, zero-shot, seed 42
 (`scripts/50_nominal_location_ablation.sh replace`). One side models space with coordinates,
 neighbours and a weights matrix; the other is handed a label.
 
@@ -333,12 +362,14 @@ neighbours and a weights matrix; the other is handed a label.
 |---|---|---|---|---|---|
 | Level A (24k) | SAR lag | k-NN-8 weights matrix, ρ | 0.346 | 27.0 % | 0.224 |
 | | XGBoost + spatial features | k-NN-8 lag, rotated coordinates, station distance | 0.288 | 21.8 % | 0.138–0.140 |
+| | Geographically weighted XGBoost | local models over the 50 nearest rows | 0.314 | 24.0 % | 0.187–0.188 |
 | | **TabPFN-3.5, postal code only** | **one text column** | **0.277** | **20.7 %** | **0.129** |
 | Full base (82k) | SAR lag | k-NN-8 weights matrix, ρ | 0.326 | 25.0 % | 0.134 |
 | | XGBoost + spatial features | k-NN-8 lag, rotated coordinates, station distance | 0.283–0.294 | 20.9–21.5 % | 0.103–0.107 |
+| | Geographically weighted XGBoost | local models over the 342 nearest rows | 0.298–0.301 | 22.1–22.2 % | 0.163–0.166 |
 | | **TabPFN-3.5, postal code only** | **one text column** | **0.268** | **19.8 %** | **0.091** |
 
-*XGBoost: range over its three seeds.*
+*XGBoost models: range over their three seeds.*
 
 Paired over the ten spatial blocks: ΔRMSE in ln (TabPFN − opponent), 95 % CI by block bootstrap,
 blocks won (`scripts/51_postal_code_vs_baselines.py`, `results/postal_code_vs_baselines.md`):
@@ -347,14 +378,16 @@ blocks won (`scripts/51_postal_code_vs_baselines.py`, `results/postal_code_vs_ba
 |---|---|---|
 | XGBoost + lag, seed 42 (the run in the main paired tests) | −0.0114 [−0.0132, −0.0096] · 10/10 | −0.0255 [−0.0292, −0.0222] · 10/10 |
 | XGBoost + lag, its best seed | −0.0112 [−0.0129, −0.0092] · 10/10 | −0.0141 [−0.0170, −0.0115] · 10/10 |
+| Geographically weighted XGBoost, its best seed | −0.0364 [−0.0464, −0.0267] · 10/10 | −0.0291 [−0.0385, −0.0191] · 9/10 |
 | SAR lag | −0.0688 [−0.0760, −0.0614] · 10/10 | −0.0572 [−0.0626, −0.0514] · 10/10 |
 
-Wilcoxon p = 0.002 in every row. MAPE falls by 1.1 to 1.8 points against XGBoost and by 5.3 to 6.3
-against SAR.
+Wilcoxon p = 0.002 in every row except the 9-of-10 one (p = 0.004; the lost block is the smallest,
+by 0.001–0.002). MAPE falls by 1.1 to 1.8 points against XGBoost+lag, by 2.3 to 3.3 against the
+geographically weighted XGBoost and by 5.3 to 6.3 against SAR.
 
 Every refutation criterion of the bet is passed, at both training scales and against every seed, by
 a model that never saw a coordinate. That includes the sharpest one: it leaves less spatial
-autocorrelation in its residuals than the two models built to capture it. The Moran's I is computed
+autocorrelation in its residuals than the three models built to capture it. The Moran's I is computed
 on a k-NN-8 matrix of the very coordinates the model was denied, so it is graded on a neighbourhood
 structure it was never shown.
 
@@ -382,7 +415,8 @@ TabPFN's side and all the spatial engineering is on the other: the difference is
 block's postal codes are absent from training by construction (97–100 %). There the code carries
 nothing, and worse than nothing. The postal-code-only model lands below its own no-location floor
 (RMSE 0.457 vs 0.440), loses to XGBoost+lag on pooled error (+0.069 to +0.072 in ln across its three
-seeds, intervals just clear of zero, 4 of 10 blocks won), ties SAR (+0.009 [−0.074, +0.069], 8 of 10
+seeds, intervals just clear of zero, 4 of 10 blocks won), trails the geographically weighted XGBoost
+(+0.047 to +0.050, intervals across zero, 4 of 10), ties SAR (+0.009 [−0.074, +0.069], 8 of 10
 blocks) and leaves the most spatial autocorrelation of any model in the study (Moran's I 0.502,
 against 0.390 for OLS). A whole block of codes the model has never seen is priced as one unknown, the
 error shifts as a block, and Moran's I measures exactly that. Coordinates extrapolate into an unseen
@@ -414,6 +448,72 @@ from the postal code already on the tax form, with no geocoder, no neighbour lis
 matrix, and leaves less spatial structure in its errors than the models that build one. For a region
 with no sales in the training base, geocode.
 
+## Text variant — the unit and the building as written
+
+*Coordinates kept; two free-text fields of the ITBI form added exactly as they were typed.*
+
+The form carries two pieces of text that no other run uses. The unit complement says which unit
+changed hands and often what came with it: `AP 201 E 3VGS` (apartment 201 with three parking spaces),
+`CJ 1904 TORRE B` (office suite 1904, tower B), `LOJA 3` (shop 3). The *Referência* field, filled on
+64 % of the cleaned forms, mostly names the building or the development: `EDIFICIO THE PARK`,
+`UP VILLAGE BY HELBOR`, `CJ HAB SAFIRA IV` (a social-housing complex), mixed with towers, landmarks
+and registry notes. `pipeline/05_reference_field.py` recovers it from the original workbooks through
+the deduplication key of the cleaning pipeline (every cleaned row matched; the cleaned bases are not
+touched). Both columns go to TabPFN-3.5 as raw strings next to the plain table: nothing parsed,
+nothing encoded (`--text complemento referencia`, `scripts/70_text_and_grouped_thinking.sh`).
+
+The expectation written before the runs (`src/model_tabpfn.py`) was a small gain at most, in leg 2,
+where the same buildings sell again, with leg 1 as a near-negative control: inside a building, the
+floor read from the unit number barely moves the price (about 0.01 % per floor over 51,495
+apartments in 9,801 buildings).
+
+| | plain table | + unit and building text | ΔRMSE (ln) [95 % CI] · blocks won |
+|---|---|---|---|
+| Leg 1, block CV on Level A | 0.3938 · MAPE 32.2 % · Moran's I 0.348 | 0.3835 · 30.8 % · 0.331 | −0.0103 [−0.0161, −0.0031] · 8/10 |
+| Leg 2, 24k → 2026 | 0.2750 · 20.4 % · 0.122 | 0.2750 · 20.6 % · 0.122 | +0.0000 [−0.0011, +0.0010] · 6/10 |
+| Leg 2, 82k → 2026 | 0.2649 · 19.5 % · 0.092 | 0.2610 · 19.2 % · 0.086 | −0.0039 [−0.0049, −0.0031] · 10/10 |
+
+The expectation was wrong about where. The largest gain is in leg 1, the part of the city the model
+has never seen. It holds against each of the three seeds of the plain table (−0.0072 to −0.0103,
+every interval clear of zero), and against XGBoost+lag it turns the pooled error from a deficit into
+a tie leaning TabPFN's way (−0.001 to −0.004 across its seeds, intervals across zero, 7 of 10 blocks);
+against the geographically weighted XGBoost the tie becomes a win (−0.023 to −0.026, every interval
+clear of zero, 9 of 10 blocks, p = 0.027). Its MAPE, 30.8 %, is the lowest of any model in that leg.
+Moran's I falls from 0.348 to 0.331, still above XGBoost+lag's 0.309 and the geographically weighted
+XGBoost's 0.319–0.326: the partial refutation stands, narrower.
+
+Where the gain comes from, read off the leg-1 predictions (no extra runs): forms whose complement
+mentions parking (−0.034), commercial units (−0.023) and forms that name a building (−0.017); houses
+and empty complements show none. It is not string matching. In leg 1 a held-out block's building
+names are new to the model (92 % of them never occur in the training folds); complements never seen
+as exact strings gain as much as those seen (−0.014 and −0.013), and among those that mention parking
+the unseen ones gain more (−0.043 against −0.020). What transfers to an unseen district is what the words say (a price that
+includes parking, an office suite rather than a shop, a named development), not which building they
+point to. One year ahead the same words add 0.004 with 82k training rows (commercial units −0.012)
+and nothing with 24k.
+
+For the bet this is a second way the plain model reaches the specialists in leg 1 without a line of
+spatial engineering: not by modelling space, but by reading the form the way an appraiser does.
+
+## Thinking with the blocks as groups
+
+Thinking mode spends extra fit-time compute tuning the model on internal validation splits. With
+`group_col` the splits never cut a group; with the spatial block as the group, the internal
+validation looks like leg 1, a whole district unseen, which is where the plain-table model is
+weakest. The reference is the same thinking mode without groups (`--thinking medium --group-col`).
+
+| | thinking (medium) | thinking, blocks as groups | ΔRMSE (ln) [95 % CI] · blocks won |
+|---|---|---|---|
+| Leg 1, block CV on Level A | 0.3889 · Moran's I 0.342 | 0.3927 · 0.350 | +0.0038 [−0.0055, +0.0149] · 3/10 |
+| Leg 2, 24k → 2026 | 0.2752 · 0.121 | 0.2738 · 0.123 | −0.0014 [−0.0021, −0.0007] · 9/10 |
+
+Grouping does not close the leg-1 gap: the difference is inside its interval and the residual
+autocorrelation does not move. One year ahead it gains 0.0014 and cuts the mean under-prediction
+from +0.055 to +0.043 in ln, but there the block also tells the model which part of the city a 2026
+row belongs to (the API may use a group's own rows to predict it), so the small gain is not purely
+a tuning effect. On an unseen district the limit is information, not validation design: the text
+variant moves leg 1, the grouping does not.
+
 ## The app
 
 Live at [tabpfn-itbi-sp.streamlit.app](https://tabpfn-itbi-sp.streamlit.app), or `streamlit run app/app.py` locally. Four tabs on the versioned results: the claim and scoreboard, a map
@@ -431,6 +531,7 @@ python pipeline/01_fiscal_block_centroids.py        # block centroids from the G
 python pipeline/02_itbi_cleaning.py                 # raw workbooks -> train / test / level_a + reports
 python pipeline/03_underdeclaration_diagnostics.py
 python pipeline/04_english_labels.py                # English-header copies under data/english/
+python pipeline/05_reference_field.py               # the free-text Referência field (text variant only)
 
 python -m src.protocol --data data/itbi_sp_2025_level_a.csv --smoke   # protocol on a trivial baseline, no API
 
@@ -438,12 +539,13 @@ python -m src.model_sar --estimator ols             # OLS
 python -m src.model_sar                             # SAR lag
 python -m src.model_xgb --seeds 42 43 44            # XGBoost + spatial features (~70 min on 2 vCPU)
 python -m src.model_xgb --no-lag --seeds 42 43 44   # ablation
+python -m src.model_gxgb --seeds 42 43 44           # geographically weighted XGBoost (~2.5 h on 2 vCPU)
 
 export TABPFN_TOKEN=...                             # TabPFN-3.5 through the API (separate venv: requirements-tabpfn.txt)
 bash scripts/10_tabpfn_level_a.sh t0                # zero-shot + paired tests
 bash scripts/10_tabpfn_level_a.sh t0-think          # thinking mode
 
-python -m src.out_of_time --model ols --train level_a   # leg 2, baselines (also: sar, xgb; --train full)
+python -m src.out_of_time --model ols --train level_a   # leg 2, baselines (also: sar, xgb, gxgb; --train full)
 bash scripts/20_tabpfn_out_of_time.sh t0 && bash scripts/20_tabpfn_out_of_time.sh compare
 
 python -m src.make_figures                          # figures from the versioned results, no model re-run
@@ -451,7 +553,9 @@ bash scripts/30_tabpfn_shap.sh run && python -m src.make_figures --shap
 bash scripts/40_financed_robustness.sh baselines && bash scripts/40_financed_robustness.sh tabpfn
 bash scripts/50_nominal_location_ablation.sh all    # ablation: district and postal code as string columns
 bash scripts/50_nominal_location_ablation.sh replace   # a name in place of the coordinates
-python scripts/51_postal_code_vs_baselines.py          # postal code only vs every XGBoost seed and SAR (no API)
+python scripts/51_postal_code_vs_baselines.py          # postal code only vs every seed of every baseline (no API)
+bash scripts/70_text_and_grouped_thinking.sh all       # text variant + thinking with blocks as groups
+python scripts/72_variants_summary.py                  # every model, both legs, paired tests (no API)
 python scripts/60_app_live_check.py                 # presses Estimate in tab 4 of the app, headless
 ```
 
@@ -479,6 +583,7 @@ returned the documented numbers (RMSE 0.4971, Moran's I 0.446) and the OLS basel
 | `data/itbi_sp_2025_level_a.csv` | stratified 24,000-row sample |
 | `data/english/*_en.csv` | English-header copies (not the originals) + `column_mapping.csv` |
 | `data/shap_subsample.csv`, `data/shap_background.csv` | the 50 explained properties and the 20-row background |
+| `data/itbi_sp_reference_field.csv.gz` | the free-text *Referência* field for every cleaned row (pipeline 05; text variant only) |
 
 Column semantics: [`data/data_dictionary.md`](data/data_dictionary.md). Raw files keep their
 original Portuguese names for provenance.
@@ -487,8 +592,8 @@ original Portuguese names for provenance.
 
 ```
 data/       raw public files, derived datasets, data reports
-pipeline/   data preparation (01–04)
-src/        protocol, SAR/OLS, XGBoost, TabPFN-3.5, out-of-time, SHAP, figures
+pipeline/   data preparation (01–05)
+src/        protocol, SAR/OLS, XGBoost, geographically weighted XGBoost, TabPFN-3.5, out-of-time, SHAP, figures
 scripts/    TabPFN-3.5 API runs (outputs cached in results/)
 results/    metrics, out-of-fold and hold-out predictions, paired tests, API cache, SHAP, figures
 app/        Streamlit app + manual
@@ -509,6 +614,11 @@ notebooks/  side experiments
   a fixed bijection keeps the identities and destroys the geographic order; if the unseen codes then
   fall to the floor while the seen ones hold, the model is reading the order of the codes. Designed,
   not run.
+
+## The paper
+
+A scientific paper with the full methods, results and discussion accompanies this repository. It
+will be published on an open platform (arXiv or a repository with a DOI) and linked here.
 
 ## License and citation
 

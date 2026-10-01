@@ -1,0 +1,16 @@
+{
+  "block": "4",
+  "seed": 42,
+  "n_train": 21970,
+  "thinking": "off",
+  "group_col": null,
+  "nominal": [],
+  "coordinates": true,
+  "station_distance": true,
+  "nominal_categorical": false,
+  "text": [
+    "complemento",
+    "referencia"
+  ],
+  "fit_s": 16.4
+}

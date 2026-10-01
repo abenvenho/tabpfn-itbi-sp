@@ -108,6 +108,27 @@ coordinates 0.365 / 0.343, the mean by district 0.426 / 0.410):
   carry the spatial signal" would then have to become "any location
   identifier does".
 
+Text variant: the unit and the building as written (``--text``)
+-----------------------------------------------------------------
+TabPFN-3.5 reads free-text columns natively. The ITBI form has two that no
+run above uses: the unit complement (``complemento``: "AP 201 E 3VGS",
+"CJ 1904 TORRE B", "CASA 3") and the *Referência* field (the building or
+development name on about 40 % of the forms: "EDIFICIO THE PARK",
+"CJ HAB SAFIRA IV", "LIVING HEREDITA"; ``pipeline/05_reference_field.py``).
+``--text complemento referencia`` adds both, as filed, to the plain table
+with its coordinates: the question is whether the words carry value
+information the table lacks (parking spaces, towers, penthouses, the
+development and its market segment, social-housing complexes). Strings are
+sent as they are; the server decides between category and text.
+
+Expectations, written before the runs: a small gain at most. Within the
+same building, the floor read from the unit number moves the unit price by
+about 0.01 % per floor (51,495 apartments in 9,801 buildings of the full 2025
+base), and units whose complement mentions parking differ from their
+neighbours in the same building by −0.026 in ln; the building name is the
+open question. A gain would show in leg 2 (the same buildings sell again);
+leg 1 is again a near-negative control.
+
 Predictive quantiles (for the 80 % intervals used later) are requested only
 from zero-shot fits: the server returns point predictions only for models
 fitted in thinking mode.
@@ -144,6 +165,9 @@ T0_NUMERIC = ["area_construida_m2", "area_terreno_m2", "idade", "padrao_nivel",
 T0_CATEGORICAL = ["tipo_imovel"]
 T0_FEATURES = T0_NUMERIC + T0_CATEGORICAL
 NOMINAL_COLUMNS = ("bairro", "cep", "cep_num")   # ablations only, never in the main runs
+TEXT_COLUMNS = ("complemento", "referencia")      # text variant only, never in the main runs
+REFERENCE_FILE = Path("data/itbi_sp_reference_field.csv.gz")
+_REF_CACHE: dict = {}
 COORDINATES = ["lat", "lon"]
 STATION = "dist_estacao_m"              # computed from the coordinates
 
@@ -169,17 +193,43 @@ def nominal_column(df: pd.DataFrame, col: str) -> pd.Series:
     return out
 
 
+def _reference_lookup() -> pd.Series:
+    """*Referência* by (sql, date, price), from pipeline/05_reference_field.py."""
+    if "s" not in _REF_CACHE:
+        ref = pd.read_csv(REFERENCE_FILE, dtype={"sql": str, "referencia": str})
+        ref["key"] = (ref["sql"] + "|" + ref["data_transacao"] + "|"
+                      + ref["valor_transacao"].map(repr))
+        _REF_CACHE["s"] = ref.drop_duplicates("key").set_index("key")["referencia"]
+    return _REF_CACHE["s"]
+
+
+def text_column(df: pd.DataFrame, col: str) -> pd.Series:
+    """A free-text column as filed (whitespace collapsed; empty -> missing)."""
+    if col == "referencia" and "referencia" not in df.columns:
+        key = (df["sql"].astype(str) + "|"
+               + pd.to_datetime(df["data_transacao"]).dt.strftime("%Y-%m-%d") + "|"
+               + df["valor_transacao"].astype(float).map(repr))
+        s = pd.Series(_reference_lookup().reindex(key).to_numpy(), index=df.index)
+    else:
+        s = df[col]
+    out = pd.Series([None] * len(s), index=s.index, dtype=object)
+    ok = s.notna().to_numpy()
+    txt = s[ok].astype(str).str.replace(r"\s+", " ", regex=True).str.strip()
+    out[ok] = txt.where(txt != "", None).to_numpy()
+    return out
+
+
 def feature_names(nominal: tuple[str, ...] = (), coords: bool = True,
-                  station: bool = True) -> list[str]:
+                  station: bool = True, text: tuple[str, ...] = ()) -> list[str]:
     """Column order of the table sent to the model."""
     base = [c for c in T0_FEATURES
             if (coords or c not in COORDINATES) and (station or c != STATION)]
-    return base + list(nominal)
+    return base + list(nominal) + list(text)
 
 
 def t0_features(df: pd.DataFrame, group_col: str | None = None,
                 nominal: tuple[str, ...] = (), coords: bool = True,
-                station: bool = True) -> pd.DataFrame:
+                station: bool = True, text: tuple[str, ...] = ()) -> pd.DataFrame:
     """Plain feature table for TabPFN (raw columns, categorical as category).
 
     ``nominal`` appends the ablation columns (``bairro``, ``cep`` as strings,
@@ -198,18 +248,25 @@ def t0_features(df: pd.DataFrame, group_col: str | None = None,
         if c not in NOMINAL_COLUMNS:
             raise ValueError(f"unknown nominal column {c!r}; choose from {NOMINAL_COLUMNS}")
         X[c] = nominal_column(df, c)
+    for c in text:
+        if c not in TEXT_COLUMNS:
+            raise ValueError(f"unknown text column {c!r}; choose from {TEXT_COLUMNS}")
+        X[c] = text_column(df, c)
     if group_col:
         X[group_col] = df[group_col].astype(int)
     return X.reset_index(drop=True)
 
 
 def nominal_tag(nominal: tuple[str, ...], as_categorical: bool = False,
-                coords: bool = True, station: bool = True) -> str:
+                coords: bool = True, station: bool = True,
+                text: tuple[str, ...] = ()) -> str:
     """Label fragment for an ablation run, e.g. ``_nom_bairro_cep``,
     ``_nocoord_nom_cep`` or ``_nocoord_nostation_nom_cep_num``."""
     tag = ("" if coords else "_nocoord") + ("" if station else "_nostation")
     if nominal:
         tag += "_nom_" + "_".join(nominal) + ("_cat" if as_categorical else "")
+    if text:
+        tag += "_txt_" + "_".join(text)
     return tag
 
 
@@ -225,8 +282,10 @@ class TabPFNT0Model:
                  quantiles: list[float] | None = None, chunk: int = 5000,
                  ignore_pretraining_limits: bool = False,
                  nominal: tuple[str, ...] = (), nominal_categorical: bool = False,
-                 coords: bool = True, station: bool = True):
+                 coords: bool = True, station: bool = True,
+                 text: tuple[str, ...] = ()):
         self.cache_dir, self.block, self.seed = cache_dir, block, seed
+        self.text = tuple(text)
         self.nominal, self.nominal_categorical = tuple(nominal), nominal_categorical
         self.coords, self.station = coords, station
         self.thinking, self.group_col = thinking, group_col
@@ -265,7 +324,8 @@ class TabPFNT0Model:
         if rec.exists():
             self.model_ = TabPFNRegressor.load_model(rec)
             return self
-        X = t0_features(train_df, self.group_col, self.nominal, self.coords, self.station)
+        X = t0_features(train_df, self.group_col, self.nominal, self.coords, self.station,
+                        self.text)
         y = train_df[TARGET].to_numpy(dtype=float)
         t0 = time.time()
         self.model_ = self._make().fit(X, y)
@@ -275,6 +335,7 @@ class TabPFNT0Model:
                 "nominal": list(self.nominal), "coordinates": self.coords,
                 "station_distance": self.station,
                 "nominal_categorical": self.nominal_categorical,
+                "text": list(self.text),
                 "fit_s": round(time.time() - t0, 1)}
         self._p("fit_meta.json").write_text(json.dumps(meta, indent=2))
         print(f"  block {self.block}: fit {meta['fit_s']:.0f}s "
@@ -285,7 +346,8 @@ class TabPFNT0Model:
         p = self._p("pred_mean.npy")
         if p.exists():
             return np.load(p)
-        X = t0_features(test_df, self.group_col, self.nominal, self.coords, self.station)
+        X = t0_features(test_df, self.group_col, self.nominal, self.coords, self.station,
+                        self.text)
         out = []
         for i in range(0, len(X), self.chunk):
             out.append(np.asarray(self.model_.predict(X.iloc[i:i + self.chunk]),
@@ -344,6 +406,8 @@ def main() -> None:
                     help="ABLATION: drop latitude and longitude (a name in place of the coordinates)")
     ap.add_argument("--no-station", action="store_true",
                     help="ABLATION: also drop the distance to the nearest station (strict version)")
+    ap.add_argument("--text", nargs="*", default=[], choices=list(TEXT_COLUMNS),
+                    help="TEXT VARIANT: add the unit complement and/or the Referência field as free text")
     ap.add_argument("--ignore-limits", action="store_true",
                     help="ignore_pretraining_limits (if the server objects to the cardinality)")
     ap.add_argument("--dry-run", action="store_true",
@@ -357,11 +421,13 @@ def main() -> None:
     group_col = BLOCK_COL if args.group_col else None
     nominal = tuple(c for c in NOMINAL_COLUMNS if c in args.nominal)   # fixed order
     coords, station = not args.no_coords, not args.no_station
-    features = feature_names(nominal, coords, station)
+    text = tuple(c for c in TEXT_COLUMNS if c in args.text)            # fixed order
+    features = feature_names(nominal, coords, station, text)
+    variant = bool(nominal or text or not coords or not station)
     label = args.label or ("tabpfn_t0"
                            + ("" if args.thinking == "off" else f"_think_{args.thinking}")
                            + ("_grp" if group_col else "")
-                           + nominal_tag(nominal, args.nominal_categorical, coords, station) + "_"
+                           + nominal_tag(nominal, args.nominal_categorical, coords, station, text) + "_"
                            + Path(args.data).stem.replace("itbi_sp_", "")
                            + ("_fin" if args.financed_only else ""))
     folds_order = sorted(df[BLOCK_COL].unique().tolist())
@@ -369,10 +435,11 @@ def main() -> None:
     print(f"TabPFN-{MODEL_VERSION} T0 | thinking={args.thinking} group_col={group_col} "
           f"| {len(df):,} rows, {len(folds_order)} blocks -> label '{label}'", flush=True)
     print(f"features ({len(features)}): {features}"
-          + ("  [ABLATION]" if nominal or not coords or not station else ""))
+          + ("  [ABLATION / VARIANT]" if variant else ""))
 
     if args.dry_run:
-        X = t0_features(df.iloc[:100], nominal=nominal, coords=coords, station=station)
+        X = t0_features(df.iloc[:100], nominal=nominal, coords=coords, station=station,
+                        text=text)
         print(X.dtypes.to_string())
         if not os.environ.get("TABPFN_TOKEN"):
             print("TABPFN_TOKEN not set: skipping cost estimate"); return
@@ -402,7 +469,7 @@ def main() -> None:
                             quantiles=args.quantiles, chunk=args.chunk,
                             ignore_pretraining_limits=args.ignore_limits,
                             nominal=nominal, nominal_categorical=args.nominal_categorical,
-                            coords=coords, station=station)
+                            coords=coords, station=station, text=text)
     t0 = time.time()
     res = run_cv(factory, df, label=label, seeds=tuple(args.seeds), out_dir=out_dir)
     s0 = str(args.seeds[0])
@@ -423,7 +490,8 @@ def main() -> None:
                      "station_distance": station,
                      "nominal_as": (None if not nominal else
                                     "categorical" if args.nominal_categorical else "string"),
-                     "analysis": "ablation" if nominal or not coords or not station else "main"}
+                     "text_columns": list(text),
+                     "analysis": "ablation" if variant else "main"}
     (out_dir / f"cv_{label}.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
     for other in args.compare_with:

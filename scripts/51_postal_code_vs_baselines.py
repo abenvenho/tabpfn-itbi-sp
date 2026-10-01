@@ -9,7 +9,8 @@ the seed-42 run of XGBoost + k-NN lag, the run behind every paired test in the
 README. XGBoost is stochastic and was run with three seeds (42, 43, 44), and on
 the full 2025 base they spread from 0.283 to 0.294 in RMSE_ln. This script
 repeats the paired comparison of the two postal-code variants against each of
-the three seeds, and against SAR, so that no claim rests on the least
+the three seeds, against each seed of the geographically weighted XGBoost
+(``src/model_gxgb.py``) and against SAR, so that no claim rests on the least
 favourable seed of the opponent.
 
 TabPFN-3.5 variants (zero-shot, seed 42, latitude and longitude removed):
@@ -53,8 +54,10 @@ TABPFN = {
     "tabpfn_t0_nocoord_nostation_nom_cep": "TabPFN-3.5, postal code only",
     "tabpfn_t0_nocoord_nom_cep": "TabPFN-3.5, postal code + station distance",
 }
-OPPONENTS = [("xgb_lag", 42), ("xgb_lag", 43), ("xgb_lag", 44), ("sar_gm", 42)]
-OPPONENT_NAME = {"xgb_lag": "XGBoost + rotated coords + k-NN-8 lag", "sar_gm": "SAR lag"}
+OPPONENTS = [("xgb_lag", 42), ("xgb_lag", 43), ("xgb_lag", 44),
+             ("gxgb", 42), ("gxgb", 43), ("gxgb", 44), ("sar_gm", 42)]
+OPPONENT_NAME = {"xgb_lag": "XGBoost + rotated coords + k-NN-8 lag",
+                 "gxgb": "Geographically weighted XGBoost", "sar_gm": "SAR lag"}
 
 LEGS = {
     "leg1": {
@@ -152,7 +155,8 @@ def main() -> None:
     out = {"seed_tabpfn": SEED, "n_boot": N_BOOT, "legs": {}}
     md = ["# The postal code in place of the coordinates — against every seed of the baselines", "",
           "TabPFN-3.5 zero-shot without latitude and longitude, carrying the raw postal code (CEP) "
-          "as a string, paired with each seed of XGBoost + k-NN-8 lag and with SAR. The baselines "
+          "as a string, paired with each seed of XGBoost + k-NN-8 lag, each seed of the geographically "
+          "weighted XGBoost, and SAR. The baselines "
           "keep all of their spatial inputs. Δ = TabPFN − opponent, negative favours TabPFN; CI95 "
           f"by block bootstrap ({N_BOOT:,} resamples of the ten spatial blocks); blocks = spatial "
           "blocks in which TabPFN has the lower RMSE; p = exact Wilcoxon signed-rank test on the "
@@ -162,6 +166,8 @@ def main() -> None:
         rows = []
         for a_label in TABPFN:
             for b_label, b_seed in OPPONENTS:
+                if not leg["pred"](b_label, b_seed).exists():
+                    continue                     # baseline not run for this leg (yet)
                 rows.append(compare(leg, a_label, b_label, b_seed))
         out["legs"][key] = {"title": leg["title"], "comparisons": rows}
         md += [f"## {leg['title']}", "",
@@ -171,7 +177,7 @@ def main() -> None:
         for r in rows:
             am, bm = r["a_metrics"], r["b_metrics"]
             dr, dm = r["rmse_ln"], r["mape_pct"]
-            opp = f"{OPPONENT_NAME[r['b']]}" + (f", seed {r['b_seed']}" if r["b"] == "xgb_lag" else "")
+            opp = f"{OPPONENT_NAME[r['b']]}" + (f", seed {r['b_seed']}" if r["b"] != "sar_gm" else "")
             md.append(
                 f"| {TABPFN[r['a']]} | {opp} "
                 f"| {am['rmse_ln']:.4f} · {bm['rmse_ln']:.4f} "

@@ -41,3 +41,9 @@ paper/*.aux
 paper/*.out
 paper/*.blg
 paper/*.synctex.gz
+
+# GW-XGBoost resumable intermediate predictions (regenerable)
+results/gxgb_cache/
+
+# Office lock files
+~$*

@@ -1,0 +1,186 @@
+{
+  "label": "tabpfn_t0_think_medium_grp_2025_level_a",
+  "n": 24000,
+  "seeds": [
+    42
+  ],
+  "folds": [
+    {
+      "block": 0,
+      "n_test": 4883
+    },
+    {
+      "block": 1,
+      "n_test": 2488
+    },
+    {
+      "block": 2,
+      "n_test": 1669
+    },
+    {
+      "block": 3,
+      "n_test": 2129
+    },
+    {
+      "block": 4,
+      "n_test": 2030
+    },
+    {
+      "block": 5,
+      "n_test": 1202
+    },
+    {
+      "block": 6,
+      "n_test": 2932
+    },
+    {
+      "block": 7,
+      "n_test": 2144
+    },
+    {
+      "block": 8,
+      "n_test": 2011
+    },
+    {
+      "block": 9,
+      "n_test": 2512
+    }
+  ],
+  "knn_k": 8,
+  "jitter_m": 0.5,
+  "per_seed": {
+    "42": {
+      "pooled": {
+        "n": 24000,
+        "rmse_ln": 0.3927393228684614,
+        "mae_ln": 0.29722923422085445,
+        "mape_pct": 32.130477973586544,
+        "median_ape_pct": 22.379770932113047,
+        "r2_ln": 0.34933284895738104
+      },
+      "per_fold": [
+        {
+          "n": 4883,
+          "rmse_ln": 0.4730635474693924,
+          "mae_ln": 0.346571163841371,
+          "mape_pct": 41.85304859055049,
+          "median_ape_pct": 23.601394110566787,
+          "r2_ln": 0.22000532804564632,
+          "block": 0
+        },
+        {
+          "n": 2488,
+          "rmse_ln": 0.3355441776100165,
+          "mae_ln": 0.2614389967473757,
+          "mape_pct": 24.547077870365346,
+          "median_ape_pct": 20.903416684009628,
+          "r2_ln": 0.3799405017748716,
+          "block": 1
+        },
+        {
+          "n": 1669,
+          "rmse_ln": 0.3666674998040395,
+          "mae_ln": 0.2886561306532305,
+          "mape_pct": 26.919758990134156,
+          "median_ape_pct": 22.650241751940083,
+          "r2_ln": 0.3014160974488813,
+          "block": 2
+        },
+        {
+          "n": 2129,
+          "rmse_ln": 0.3344293825837227,
+          "mae_ln": 0.24884298348881484,
+          "mape_pct": 28.82828682348359,
+          "median_ape_pct": 18.88509498479776,
+          "r2_ln": 0.33951703838256764,
+          "block": 3
+        },
+        {
+          "n": 2030,
+          "rmse_ln": 0.3628866138110551,
+          "mae_ln": 0.2848948627017167,
+          "mape_pct": 26.401747664265674,
+          "median_ape_pct": 22.220907841645797,
+          "r2_ln": 0.14276218476124403,
+          "block": 4
+        },
+        {
+          "n": 1202,
+          "rmse_ln": 0.349649301970317,
+          "mae_ln": 0.27498025399143006,
+          "mape_pct": 31.37204980900196,
+          "median_ape_pct": 22.18533318439636,
+          "r2_ln": 0.3501072470127359,
+          "block": 5
+        },
+        {
+          "n": 2932,
+          "rmse_ln": 0.4160570473291768,
+          "mae_ln": 0.32968165157573115,
+          "mape_pct": 30.608809473919024,
+          "median_ape_pct": 25.515929530730556,
+          "r2_ln": 0.17078379658992004,
+          "block": 6
+        },
+        {
+          "n": 2144,
+          "rmse_ln": 0.4012438324524545,
+          "mae_ln": 0.30518864143535274,
+          "mape_pct": 37.87308107882792,
+          "median_ape_pct": 24.102931514692415,
+          "r2_ln": 0.19975522874878882,
+          "block": 7
+        },
+        {
+          "n": 2011,
+          "rmse_ln": 0.3515071880511475,
+          "mae_ln": 0.2676524655551237,
+          "mape_pct": 31.24028374415276,
+          "median_ape_pct": 20.787130900948046,
+          "r2_ln": 0.2934262023797448,
+          "block": 8
+        },
+        {
+          "n": 2512,
+          "rmse_ln": 0.37380798659163844,
+          "mae_ln": 0.2830882229206668,
+          "mape_pct": 29.582614453149358,
+          "median_ape_pct": 21.22184574562402,
+          "r2_ln": 0.1690550741392568,
+          "block": 9
+        }
+      ],
+      "moran_oof": {
+        "I": 0.350394164669272,
+        "z_norm": 115.60692901343556,
+        "p_norm": 0.0
+      },
+      "runtime_s": 544.2
+    }
+  },
+  "model": {
+    "family": "TabPFN",
+    "version": "v3.5",
+    "thinking": "medium",
+    "group_col": "bloco",
+    "thinking_metric": "rmse",
+    "features": [
+      "area_construida_m2",
+      "area_terreno_m2",
+      "idade",
+      "padrao_nivel",
+      "dist_estacao_m",
+      "mes_idx",
+      "lat",
+      "lon",
+      "tipo_imovel"
+    ],
+    "explicit_spatial_modelling": false,
+    "nominal_location": [],
+    "coordinates": true,
+    "station_distance": true,
+    "nominal_as": null,
+    "text_columns": [],
+    "analysis": "main"
+  }
+}

@@ -26,7 +26,10 @@ What is reported (``results/oot_<label>.json``):
 Models (all through the same ``fit(train_df)/predict(test_df)`` interface):
 ``ols``, ``sar`` (GM_Lag), ``xgb`` (spatial features; hyperparameters tuned
 by leave-one-block-out on the *training* base only, cached in
-``results/xgb_params_oot_<train>.json``) and ``tabpfn`` (plain table,
+``results/xgb_params_oot_<train>.json``), ``gxgb`` (geographically weighted
+XGBoost at regression points, ``src/model_gxgb.py``; bandwidth and alpha
+chosen by inner block CV on the training base, cached in
+``results/gxgb_params_oot_<train>.json``) and ``tabpfn`` (plain table,
 zero-shot or thinking; API responses cached under
 ``results/tabpfn_cache/oot_<label>/``).
 
@@ -38,6 +41,7 @@ Run (baselines here; TabPFN on a machine with API access):
     python -m src.out_of_time --model ols --train level_a
     python -m src.out_of_time --model sar --train level_a
     python -m src.out_of_time --model xgb --train level_a --seeds 42 43 44
+    python -m src.out_of_time --model gxgb --train level_a --seeds 42 43 44
     python -m src.out_of_time --model tabpfn --train level_a --thinking off
     python -m src.out_of_time --compare tabpfn_t0_level_a xgb_lag_level_a
 """
@@ -178,6 +182,24 @@ def make_factory(args, train_df: pd.DataFrame, out_dir: Path, label: str):
                   f"(inner RMSE_ln={tuned['inner_rmse_ln']:.4f})", flush=True)
         params = tuned["params"]
         return lambda seed: XGBSpatialModel(seed=seed, params=params, use_lag=True)
+    if args.model == "gxgb":
+        from .model_gxgb import CACHE_ROOT, CachedHoldout, GWXGBoost, tune_on as tune_gxgb
+        cache = out_dir / (f"gxgb_params_oot_{args.train}"
+                           + ("_fin" if args.financed_only else "") + ".json")
+        if cache.exists():
+            tuned = json.loads(cache.read_text())
+        else:
+            t0 = time.time()
+            tuned = tune_gxgb(train_df, seed=SEED,
+                              cache_dir=CACHE_ROOT / f"oot_{label}" / "tune")
+            tuned["tuning_s"] = round(time.time() - t0, 1)
+            cache.write_text(json.dumps(tuned, indent=2))
+            print(f"  GW-XGBoost tuned on {args.train} blocks in {tuned['tuning_s']:.0f}s: "
+                  f"k={tuned['bandwidth']} alpha={tuned['alpha']} "
+                  f"(inner RMSE_ln={tuned['inner_rmse_ln']:.4f})", flush=True)
+        return lambda seed: CachedHoldout(
+            CACHE_ROOT / f"oot_{label}" / f"seed{seed}_pred.npy",
+            GWXGBoost(seed=seed, bandwidth=tuned["bandwidth"], alpha=tuned["alpha"]))
     if args.model == "tabpfn":
         from .model_tabpfn import TabPFNT0Model
         cache_dir = out_dir / "tabpfn_cache" / f"oot_{label}"
@@ -189,8 +211,15 @@ def make_factory(args, train_df: pd.DataFrame, out_dir: Path, label: str):
                                           nominal=nominal_cols(args),
                                           nominal_categorical=args.nominal_categorical,
                                           coords=not args.no_coords,
-                                          station=not args.no_station)
+                                          station=not args.no_station,
+                                          text=text_cols(args))
     raise ValueError(args.model)
+
+
+def text_cols(args) -> tuple[str, ...]:
+    """Free-text columns of the text variant, in fixed order; empty for main runs."""
+    from .model_tabpfn import TEXT_COLUMNS
+    return tuple(c for c in TEXT_COLUMNS if c in (args.text or []))
 
 
 def nominal_cols(args) -> tuple[str, ...]:
@@ -206,18 +235,20 @@ def default_label(args) -> str:
         base = "sar_gm"
     elif args.model == "xgb":
         base = "xgb_lag"
+    elif args.model == "gxgb":
+        base = "gxgb"
     else:
         base = ("tabpfn_t0" + ("" if args.thinking == "off" else f"_think_{args.thinking}")
                 + ("_grp" if args.group_col else ""))
         from .model_tabpfn import nominal_tag
         base += nominal_tag(nominal_cols(args), args.nominal_categorical,
-                            not args.no_coords, not args.no_station)
+                            not args.no_coords, not args.no_station, text_cols(args))
     return f"{base}_{args.train}" + ("_fin" if args.financed_only else "")
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="Out-of-time evaluation: fit on 2025, predict 2026")
-    ap.add_argument("--model", choices=["ols", "sar", "xgb", "tabpfn"])
+    ap.add_argument("--model", choices=["ols", "sar", "xgb", "gxgb", "tabpfn"])
     ap.add_argument("--train", choices=list(TRAIN_FILES), default="level_a")
     ap.add_argument("--seeds", type=int, nargs="+", default=[SEED])
     ap.add_argument("--n-trials", type=int, default=30, help="XGB: Optuna trials")
@@ -235,6 +266,8 @@ def main() -> None:
                     help="TabPFN ABLATION: drop latitude and longitude")
     ap.add_argument("--no-station", action="store_true",
                     help="TabPFN ABLATION: also drop the distance to the nearest station")
+    ap.add_argument("--text", nargs="*", default=[], choices=["complemento", "referencia"],
+                    help="TabPFN TEXT VARIANT: add the unit complement and/or the Referência field")
     ap.add_argument("--label", default=None)
     ap.add_argument("--financed-only", action="store_true",
                     help="robustness: financed transactions only, in training and in 2026")

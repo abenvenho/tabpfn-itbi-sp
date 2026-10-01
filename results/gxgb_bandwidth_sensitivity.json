@@ -1,0 +1,115 @@
+{
+  "what": "Geographically weighted XGBoost, leg 2 (fit on Level A, predict 2026): the same model with the bandwidth chosen from successively wider grids. The grid was widened downward because the inner CV kept choosing its smallest value; the last row is the reported run.",
+  "runs": [
+    {
+      "bandwidth_grid": [
+        400,
+        800,
+        1600,
+        3200
+      ],
+      "chosen_k": 400,
+      "alpha": 0.5,
+      "inner_rmse_ln": 0.4335,
+      "rmse_ln_2026_by_seed": {
+        "42": 0.3077,
+        "43": 0.3083,
+        "44": 0.3076
+      },
+      "mape_pct_2026_by_seed": {
+        "42": 23.3,
+        "43": 23.31,
+        "44": 23.31
+      },
+      "moran_I_2026_by_seed": {
+        "42": 0.188,
+        "43": 0.19,
+        "44": 0.188
+      }
+    },
+    {
+      "bandwidth_grid": [
+        200,
+        400,
+        800,
+        1600,
+        3200
+      ],
+      "chosen_k": 200,
+      "alpha": 0.5,
+      "inner_rmse_ln": 0.4329,
+      "rmse_ln_2026_by_seed": {
+        "42": 0.308,
+        "43": 0.3087,
+        "44": 0.3077
+      },
+      "mape_pct_2026_by_seed": {
+        "42": 23.34,
+        "43": 23.34,
+        "44": 23.34
+      },
+      "moran_I_2026_by_seed": {
+        "42": 0.186,
+        "43": 0.186,
+        "44": 0.183
+      }
+    },
+    {
+      "bandwidth_grid": [
+        100,
+        200,
+        400,
+        800,
+        1600,
+        3200
+      ],
+      "chosen_k": 100,
+      "alpha": 0.5,
+      "inner_rmse_ln": 0.4259,
+      "rmse_ln_2026_by_seed": {
+        "42": 0.3086,
+        "43": 0.3092,
+        "44": 0.3091
+      },
+      "mape_pct_2026_by_seed": {
+        "42": 23.47,
+        "43": 23.47,
+        "44": 23.49
+      },
+      "moran_I_2026_by_seed": {
+        "42": 0.184,
+        "43": 0.185,
+        "44": 0.186
+      }
+    },
+    {
+      "bandwidth_grid": [
+        50,
+        100,
+        200,
+        400,
+        800,
+        1600,
+        3200
+      ],
+      "chosen_k": 50,
+      "alpha": 0.5,
+      "inner_rmse_ln": 0.4243,
+      "rmse_ln_2026_by_seed": {
+        "42": 0.3135,
+        "43": 0.3141,
+        "44": 0.3135
+      },
+      "mape_pct_2026_by_seed": {
+        "42": 23.95,
+        "43": 23.95,
+        "44": 23.95
+      },
+      "moran_I_2026_by_seed": {
+        "42": 0.187,
+        "43": 0.188,
+        "44": 0.188
+      }
+    }
+  ]
+}
