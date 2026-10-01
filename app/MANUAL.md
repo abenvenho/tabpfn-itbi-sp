@@ -20,7 +20,7 @@ streamlit run app/app.py
 ```
 
 The browser opens at `http://localhost:8501`. First load takes a few seconds (47,810 transactions
-and four sets of predictions are read and cached in memory).
+and six sets of predictions are read and cached in memory).
 
 Requirements: Python 3.10+, Streamlit ≥ 1.50, ~1 GB of RAM, no GPU. The street basemap is fetched from a public tile
 server; without internet, untick *Street basemap* in the sidebar and the maps fall back to plain
@@ -30,7 +30,7 @@ latitude/longitude axes.
 
 | Control | Effect |
 |---|---|
-| **Training base for the 2026 predictions** | *Level A* (24,000 rows): all four models are available. *Full 2025 base* (82,187 rows): the same four models fitted on everything. Switches the tables in tab 1, the map in tab 2 and the estimates in tab 3. |
+| **Training base for the 2026 predictions** | *Level A* (24,000 rows) or *Full 2025 base* (82,187 rows): the six models below, fitted on that base. Switches the tables in tab 1, the map in tab 2 and the estimates in tab 3. |
 | **Property type** | apartment / house / commercial — filters the map and the counters in tab 2. |
 | **Financing** | all / financed only / cash only. Financed deals carry a bank appraisal and are the cleanest price signal; the README has a robustness run on them. |
 | **Street basemap** | On by default. Off = offline mode. |
@@ -39,11 +39,17 @@ latitude/longitude axes.
 
 ### Tab 1 · The claim and the scoreboard
 
-The hypothesis in one paragraph, the two legs of the protocol with their verdicts, and the two
-headline tables (block cross-validation on 2025; out-of-time test on 2026). Below them, two charts:
-RMSE per spatial block for the four models, and the paired difference TabPFN-3.5 − baseline with its
-block-bootstrap 95 % interval (negative = TabPFN better). Every number is read from
-`results/cv_*.json`, `results/oot_*.json` and `results/oot_paired_comparisons_*.csv`.
+The hypothesis, what the study shows in five points, and the verdict table of the README (win, tie or
+loss for TabPFN-3.5 against each spatial specialist, by setting and by spatial input). Below them, the
+two headline tables (block cross-validation on 2025; out-of-time test on 2026), with the seed range of
+the stochastic baselines. Then two charts: RMSE per spatial block on 2026, and the paired difference
+TabPFN-3.5 − specialist with its block-bootstrap 95 % interval (negative = TabPFN better), for the
+plain table and for the postal-code-only variant, in either test, with the same numbers as a table.
+
+Six models appear across the tabs: TabPFN-3.5 with latitude and longitude; TabPFN-3.5 with the postal
+code only (coordinates and station distance removed); the geographically weighted XGBoost; XGBoost +
+k-NN-8 lag; SAR; OLS. Every number is read from `results/cv_*.json`, `results/oot_*.json`,
+`results/variants_summary.json` and `results/postal_code_vs_baselines.json`.
 
 ### Tab 2 · Where the models fail
 
@@ -66,7 +72,7 @@ Choose one of the **50 properties explained with SHAP**, or type any 11-digit SQ
 a 2026 transaction. The page shows:
 
 * the property's attributes and declared price;
-* what each of the four models estimated (R$/m², total, error vs the declared price);
+* what each of the six models estimated (R$/m², total, error vs the declared price);
 * the eight nearest 2025 transactions of the same type — *data, not model*: this is the k-NN-8
   neighbourhood the SAR and XGBoost baselines were given, shown for context. Distance 0 m means the
   same fiscal block (coordinates are block centroids), so a building's own earlier sales come first.

@@ -33,12 +33,21 @@ DATA, RESULTS = ROOT / "data", ROOT / "results"
 # Palette (validated categorical order; one entity = one colour everywhere)
 # --------------------------------------------------------------------------
 MODELS = {  # key -> (label, short label, colour)
-    "tabpfn_t0": ("TabPFN-3.5, plain table (zero-shot)", "TabPFN-3.5", "#2a78d6"),
-    "xgb_lag":   ("XGBoost + rotated coordinates + k-NN-8 lag", "XGBoost+lag", "#eb6834"),
-    "sar_gm":    ("SAR lag, GM_Lag", "SAR", "#1baf7a"),
-    "ols":       ("OLS hedonic", "OLS", "#eda100"),
+    "tabpfn_t0":  ("TabPFN-3.5, plain table with latitude and longitude (zero-shot)", "TabPFN-3.5", "#2a78d6"),
+    "tabpfn_cep": ("TabPFN-3.5, postal code only — no coordinates (zero-shot)", "TabPFN-3.5 · postal code", "#e87ba4"),
+    "gxgb":       ("Geographically weighted XGBoost", "GW-XGBoost", "#4a3aa7"),
+    "xgb_lag":    ("XGBoost + rotated coordinates + k-NN-8 lag", "XGBoost+lag", "#eb6834"),
+    "sar_gm":     ("SAR lag, GM_Lag", "SAR", "#1baf7a"),
+    "ols":        ("OLS hedonic", "OLS", "#eda100"),
 }
-ORDER = list(MODELS)                       # bar order = validated adjacency
+ORDER = list(MODELS)                       # bar order = validated adjacency (validate_palette.js, light)
+# file stem of each model in results/ (oot_pred_<stem>_<train>_seed42.csv, oot_<stem>_<train>.json, cv_<stem>_2025_level_a.json)
+STEM = {"tabpfn_t0": "tabpfn_t0", "tabpfn_cep": "tabpfn_t0_nocoord_nostation_nom_cep", "gxgb": "gxgb",
+        "xgb_lag": "xgb_lag", "sar_gm": "sar_gm", "ols": "ols"}
+EXTRA_CV = {  # block-CV variants shown in the leg-1 table only
+    "tabpfn_think": ("TabPFN-3.5, plain table, thinking (medium)", "cv_tabpfn_t0_think_medium_2025_level_a.json"),
+    "tabpfn_text":  ("TabPFN-3.5, coordinates + unit and building text", "cv_tabpfn_t0_txt_complemento_referencia_2025_level_a.json"),
+}
 DIVERGING = [[0.0, "#0d366b"], [0.5, "#f0efec"], [1.0, "#b12e2e"]]   # blue <- 0 -> red
 SEQUENTIAL = [[0.0, "#cde2fb"], [1.0, "#0d366b"]]
 INK, MUTED, GRID = "#0b0b0b", "#898781", "#e1e0d9"
@@ -64,7 +73,7 @@ def load_test() -> pd.DataFrame:
     df = pd.read_csv(DATA / "itbi_sp_2026_test.csv", dtype=DTYPES, parse_dates=["data_transacao"])
     for train in ("level_a", "full"):
         for m in MODELS:
-            p = RESULTS / f"oot_pred_{m}_{train}_seed42.csv"
+            p = RESULTS / f"oot_pred_{STEM[m]}_{train}_seed42.csv"
             if p.exists():
                 pred = pd.read_csv(p, usecols=["sql", "yhat_ln"], dtype={"sql": str})
                 assert (pred["sql"].values == df["sql"].values).all(), p.name
@@ -89,33 +98,56 @@ def load_train(base: str = "level_a") -> pd.DataFrame:
 def load_metrics() -> dict:
     """Headline tables straight from the versioned JSON files."""
     out = {"cv": [], "oot_level_a": [], "oot_full": []}
-    cv_rows = [("ols", "cv_ols_2025_level_a.json"), ("sar_gm", "cv_sar_gm_2025_level_a.json"),
-               ("xgb_lag", "cv_xgb_lag_2025_level_a.json"), ("tabpfn_t0", "cv_tabpfn_t0_2025_level_a.json"),
-               ("tabpfn_think", "cv_tabpfn_t0_think_medium_2025_level_a.json")]
+
+    def seed_range(d: dict) -> str:
+        r = [s["pooled"]["rmse_ln"] for s in d["per_seed"].values()]
+        return f"{min(r):.3f}–{max(r):.3f}" if len(r) > 1 else "—"
+
+    cv_rows = [(k, f"cv_{STEM[k]}_2025_level_a.json") for k in ORDER] + [(k, v[1]) for k, v in EXTRA_CV.items()]
     for key, f in cv_rows:
         p = RESULTS / f
         if not p.exists():
             continue
         d = json.load(open(p))
         s = d["per_seed"]["42"]
-        row = {"model": key, "rmse_ln": s["pooled"]["rmse_ln"], "mape_pct": s["pooled"]["mape_pct"],
-               "r2_ln": s["pooled"]["r2_ln"], "moran_I": s["moran_oof"]["I"]}
-        if "seed_summary" in d:
-            row["rmse_ci95"] = d["seed_summary"]["rmse_ln"]["ci95"]
-        out["cv"].append(row)
+        out["cv"].append({"model": key, "rmse_ln": s["pooled"]["rmse_ln"], "rmse_seeds": seed_range(d),
+                          "mape_pct": s["pooled"]["mape_pct"], "r2_ln": s["pooled"]["r2_ln"],
+                          "moran_I": s["moran_oof"]["I"]})
     for train in ("level_a", "full"):
         for key in ORDER:
-            p = RESULTS / f"oot_{key}_{train}.json"
+            p = RESULTS / f"oot_{STEM[key]}_{train}.json"
             if not p.exists():
                 continue
-            s = json.load(open(p))["per_seed"]["42"]
+            d = json.load(open(p))
+            s = d["per_seed"]["42"]
             out[f"oot_{train}"].append({
-                "model": key, "rmse_ln": s["pooled"]["rmse_ln"], "mape_pct": s["pooled"]["mape_pct"],
+                "model": key, "rmse_ln": s["pooled"]["rmse_ln"], "rmse_seeds": seed_range(d),
+                "mape_pct": s["pooled"]["mape_pct"],
                 "r2_ln": s["pooled"]["r2_ln"], "bias_ln": s["bias_ln"], "moran_I": s["moran_test"]["I"],
                 "per_block": pd.DataFrame(s["per_block"]), "per_month": pd.DataFrame(s["per_month_ahead"])})
-    out["paired_cv"] = pd.read_csv(RESULTS / "paired_comparisons_2025_level_a.csv")
-    out["paired_oot_level_a"] = pd.read_csv(RESULTS / "oot_paired_comparisons_level_a.csv")
-    out["paired_oot_full"] = pd.read_csv(RESULTS / "oot_paired_comparisons_full.csv")
+
+    # Paired tests, TabPFN-3.5 (coordinates, or postal code only) minus each spatial specialist,
+    # from the two versioned summaries (scripts/72_variants_summary.py, scripts/51_postal_code_vs_baselines.py).
+    opp = {"xgb": "xgb_lag", "gxgb": "gxgb", "sar": "sar_gm", "xgb_lag": "xgb_lag", "sar_gm": "sar_gm"}
+    rows = []
+    v = json.load(open(RESULTS / "variants_summary.json"))["legs"]
+    for leg, d in v.items():
+        for pr in d["pairs"]:
+            if pr["a"] == "tabpfn" and pr["b"] in opp:
+                for ps in pr["per_seed"]:
+                    rows.append({"leg": leg, "a": "tabpfn_t0", "b": opp[pr["b"]], "b_seed": ps.get("b_seed") or 42,
+                                 "diff": ps["rmse_ln"]["diff"], "ci_lo": ps["rmse_ln"]["ci95"][0],
+                                 "ci_hi": ps["rmse_ln"]["ci95"][1], "blocks_won": ps["blocks_won"],
+                                 "n_blocks": ps["n_blocks"], "p": ps["wilcoxon_p"]})
+    pc = json.load(open(RESULTS / "postal_code_vs_baselines.json"))["legs"]
+    for leg, d in pc.items():
+        for c in d["comparisons"]:
+            if c["a"] == STEM["tabpfn_cep"] and c["b"] in opp:
+                rows.append({"leg": leg, "a": "tabpfn_cep", "b": opp[c["b"]], "b_seed": c.get("b_seed") or 42,
+                             "diff": c["rmse_ln"]["diff"], "ci_lo": c["rmse_ln"]["ci95"][0],
+                             "ci_hi": c["rmse_ln"]["ci95"][1], "blocks_won": c["blocks_won"],
+                             "n_blocks": c["n_blocks"], "p": c["wilcoxon_p"]})
+    out["paired"] = pd.DataFrame(rows)
     return out
 
 
@@ -182,7 +214,7 @@ with st.sidebar:
                "São Paulo ITBI transactions, 2025 → 2026.")
     train_base = st.radio("Training base for the 2026 predictions",
                           ["level_a", "full"], index=0,
-                          format_func=lambda k: {"level_a": "Level A — 24,000 rows (all four models)",
+                          format_func=lambda k: {"level_a": "Level A — 24,000 rows",
                                                  "full": "Full 2025 base — 82,187 rows"}[k])
     types = st.multiselect("Property type", ["apartment", "house", "commercial"],
                            default=["apartment", "house", "commercial"])
@@ -210,7 +242,7 @@ tab_claim, tab_map, tab_prop, tab_appraise = st.tabs(
 # Tab 1 — claim + scoreboard
 # ==========================================================================
 with tab_claim:
-    c1, c2 = st.columns([3, 2])
+    c1, c2 = st.columns([1, 1])
     with c1:
         st.markdown("""
 ### The claim, stated so that it can fail
@@ -223,74 +255,121 @@ estimate. Gradient boosting needs the same help, hand-fed as neighbourhood featu
 numeric columns* — no weights matrix, no lag, no rotated axes, nothing engineered — predicts
 spatially correlated prices as well as, or better than, the specialists that model space explicitly.
 
-The comparison is rigged *against* the bet. The baselines keep every spatial advantage; TabPFN-3.5
-gets nine raw columns and ten seconds per fit. It loses if it has worse pooled error, loses most
+The comparison is rigged *against* the bet. SAR keeps its weights matrix; XGBoost its k-NN spatial
+lag, rotated coordinates and nested tuning; a geographically weighted XGBoost its local models.
+TabPFN-3.5 gets nine raw columns, zero-shot. It loses if it has worse pooled error, loses most
 spatial blocks (paired Wilcoxon, block bootstrap), or — the sharpest test — leaves **more spatial
 autocorrelation in its residuals** (Moran's I) than the models that see space.
 """)
     with c2:
-        st.markdown("### Two legs, one verdict each")
         st.markdown("""
-| Leg | Setting | Verdict |
-|---|---|---|
-| **Spatial block CV** on 24 k rows of 2025 | 10 K-means blocks, each held out in turn: *predict a part of the city the model never saw* | Point error: tie with XGBoost+lag, beats SAR. Residual Moran's I: **partly refuted** — more spatial structure left than XGBoost with the explicit lag |
-| **Out-of-time** 2025 → 2026 | Fit once on 2025, predict 47,810 transactions of 2026 inside the same city | **Survives every criterion**, on 24 k and 82 k rows, including the residual one — lowest Moran's I of all four models |
-""")
-        st.caption("Metrics are on ln(R$/m²). Moran's I on a k-NN-8 matrix of the residuals; higher = more spatial structure unexplained.")
+### What it shows
 
-    st.markdown("#### Leg 1 — leave-one-block-out CV, Level A (24,000 rows of 2025)")
+1. **Inside a market it has seen, TabPFN-3.5 models location by itself, and better than the
+   specialists.** One year ahead it beats XGBoost + lag, the geographically weighted XGBoost and
+   SAR in 9 or 10 of 10 blocks, and leaves the least spatial autocorrelation in its errors.
+2. **There, a location identifier is enough.** With the raw postal code (CEP) in place of the
+   coordinates — a text column with no geometry — every one-year-ahead verdict holds.
+3. **In a district it has never seen, it ties on error and loses on residual structure.** That is
+   a partial refutation of the bet. Against XGBoost + lag it does not appear on financed deals alone.
+4. **New ground needs coordinates.** With the postal code alone, the unseen-district test fails.
+5. **More information and more compute lower the error there; neither removes the residual gap.**
+""")
+
+    st.markdown("### Verdicts for TabPFN-3.5")
+    st.markdown("""
+| Setting | TabPFN-3.5 gets location from | vs XGBoost + spatial lag | vs geographically weighted XGBoost | vs SAR lag | Moran's I of its residuals |
+|---|---|---|---|---|---|
+| Same city, one year ahead | latitude and longitude | **win** · 10/10 | **win** · 9/10 | **win** · 10/10 | 0.092 · below every specialist |
+| Same city, one year ahead | the postal code alone | **win** · 10/10 | **win** · 9/10 | **win** · 10/10 | 0.091 · below every specialist |
+| District never seen | latitude and longitude | tie · 7/10 | tie · 6–7/10 | **win** · 8/10 | 0.342–0.348 · above both XGBoost |
+| District never seen | coordinates + unit and building text | tie · 7/10 | **win** · 9/10 | **win** · 9/10 | 0.331 · above both XGBoost |
+| District never seen | the postal code alone | **loss** · 4/10 | tie · 4/10 | tie · 8/10 | 0.502 · highest of any model |
+""")
+    st.caption("Win or loss: the 95 % block-bootstrap interval of the pooled RMSE difference (ln) excludes zero, "
+               "against each seed of the opponent; tie: it includes zero. n/10 = spatial blocks in which TabPFN-3.5 "
+               "has the lower RMSE. One year ahead: fitted on the 82,187 transactions of 2025 (fitted on 24,000 rows "
+               "instead, it wins 10 of 10 blocks against every opponent with either input). District never seen: "
+               "leave-one-block-out CV on 24,000 transactions of 2025. Postal code alone: latitude, longitude and the "
+               "station distance removed. Metrics on ln(R$/m²); Moran's I on a k-NN-8 matrix of the residuals.")
+
+    label = {**{k: v[0] for k, v in MODELS.items()}, **{k: v[0] for k, v in EXTRA_CV.items()}}
+    st.markdown("#### District never seen — leave-one-block-out CV, Level A (24,000 rows of 2025)")
     cv = pd.DataFrame(metrics["cv"])
-    label = {**{k: v[0] for k, v in MODELS.items()}, "tabpfn_think": "TabPFN-3.5, plain table (thinking, medium)"}
     cv_show = pd.DataFrame({
         "Model": cv["model"].map(label),
-        "RMSE (ln)": cv["rmse_ln"].round(3), "MAPE": (cv["mape_pct"]).round(1).astype(str) + " %",
-        "R² (ln)": cv["r2_ln"].round(3), "Moran's I of residuals": cv["moran_I"].round(3)})
+        "RMSE (ln)": cv["rmse_ln"].map(lambda v: f"{v:.3f}"), "RMSE, range over seeds": cv["rmse_seeds"],
+        "MAPE": cv["mape_pct"].map(lambda v: f"{v:.1f} %"),
+        "R² (ln)": cv["r2_ln"].map(lambda v: f"{v:.3f}"), "Moran's I of residuals": cv["moran_I"].map(lambda v: f"{v:.3f}")})
     st.dataframe(cv_show, hide_index=True, width="stretch")
 
-    st.markdown(f"#### Leg 2 — out-of-time, fit on 2025 ({'Level A, 24,000 rows' if train_base == 'level_a' else 'full base, 82,187 rows'}), predict the 47,810 transactions of 2026")
+    st.markdown(f"#### One year ahead — fit on 2025 ({'Level A, 24,000 rows' if train_base == 'level_a' else 'full base, 82,187 rows'}), predict the 47,810 transactions of 2026")
     oot = pd.DataFrame([{k: v for k, v in r.items() if k not in ("per_block", "per_month")} for r in metrics[f"oot_{train_base}"]])
     oot_show = pd.DataFrame({
-        "Model": oot["model"].map(label), "RMSE (ln)": oot["rmse_ln"].round(3),
-        "MAPE": oot["mape_pct"].round(1).astype(str) + " %", "R² (ln)": oot["r2_ln"].round(3),
-        "Bias (ln, + = under-predicted)": oot["bias_ln"].round(3), "Moran's I of residuals": oot["moran_I"].round(3)})
+        "Model": oot["model"].map(label), "RMSE (ln)": oot["rmse_ln"].map(lambda v: f"{v:.3f}"), "RMSE, range over seeds": oot["rmse_seeds"],
+        "MAPE": oot["mape_pct"].map(lambda v: f"{v:.1f} %"), "R² (ln)": oot["r2_ln"].map(lambda v: f"{v:.3f}"),
+        "Bias (ln, + = under-predicted)": oot["bias_ln"].map(lambda v: f"{v:+.3f}"), "Moran's I of residuals": oot["moran_I"].map(lambda v: f"{v:.3f}")})
     st.dataframe(oot_show, hide_index=True, width="stretch")
+    st.caption("Values of seed 42, the run behind the maps and the per-transaction estimates; the range column covers "
+               "the three seeds of the stochastic baselines. The training base follows the sidebar.")
 
-    g1, g2 = st.columns(2)
-    with g1:
-        fig = go.Figure()
-        for r in metrics[f"oot_{train_base}"]:
-            pb = r["per_block"].sort_values("block")
-            fig.add_bar(x=pb["block"].astype(str), y=pb["rmse_ln"], name=MODELS[r["model"]][1],
-                        marker_color=MODELS[r["model"]][2], marker_line_width=0,
-                        hovertemplate="block %{x} · RMSE %{y:.3f}<extra>" + MODELS[r["model"]][1] + "</extra>")
-        fig.update_layout(barmode="group", bargap=0.25, bargroupgap=0.08, title="RMSE (ln) per spatial block — 2026",
-                          yaxis_title="RMSE (ln)", xaxis_title=None)
-        fig.update_xaxes(tickprefix="block ")
-        st.plotly_chart(base_layout(fig, height=400), width="stretch")
-    with g2:
-        pc = metrics[f"paired_oot_{train_base}"]
-        pc = pc[(pc["a"] == "tabpfn_t0") & (pc["metric"] == "rmse_ln") & pc["b"].isin(ORDER)]
-        fig = go.Figure()
-        for _, r in pc.iterrows():
-            fig.add_scatter(x=[r["pooled_diff"]], y=[MODELS[r["b"]][1]], mode="markers",
-                            marker=dict(color=MODELS[r["b"]][2], size=12),
-                            error_x=dict(type="data", symmetric=False, array=[r["ci_hi"] - r["pooled_diff"]],
-                                         arrayminus=[r["pooled_diff"] - r["ci_lo"]], color=MODELS[r["b"]][2], thickness=2),
-                            name=MODELS[r["b"]][1], showlegend=False,
-                            hovertemplate="ΔRMSE %{x:+.3f}<extra>vs " + MODELS[r["b"]][1] + "</extra>")
-        fig.add_vline(x=0, line_color=MUTED, line_dash="dot")
-        fig.update_layout(title="TabPFN-3.5 minus each baseline — ΔRMSE (ln), 2026",
-                          xaxis_title="ΔRMSE (ln) with block-bootstrap 95 % CI · negative = TabPFN better")
-        st.plotly_chart(base_layout(fig, height=400), width="stretch")
-    st.caption("Paired over the ten 2026 blocks; Wilcoxon p = 0.002 for every pair shown (10 of 10 blocks). "
-               "Numbers are read from `results/oot_*.json` and `results/oot_paired_comparisons_*.csv`.")
+    fig = go.Figure()
+    for r in metrics[f"oot_{train_base}"]:
+        pb = r["per_block"].sort_values("block")
+        fig.add_bar(x=pb["block"].astype(str), y=pb["rmse_ln"], name=MODELS[r["model"]][1],
+                    marker_color=MODELS[r["model"]][2], marker_line_width=0,
+                    hovertemplate="block %{x} · RMSE %{y:.3f}<extra>" + MODELS[r["model"]][1] + "</extra>")
+    fig.update_layout(barmode="group", bargap=0.2, bargroupgap=0.06, title="RMSE (ln) per spatial block — 2026",
+                      yaxis_title="RMSE (ln)", xaxis_title=None)
+    fig.update_xaxes(tickprefix="block ")
+    st.plotly_chart(base_layout(fig, height=420), width="stretch")
+
+    st.markdown("#### Paired differences — TabPFN-3.5 minus each spatial specialist")
+    leg_pick = st.radio("Test", ["one year ahead (2026)", "district never seen (block CV)"], horizontal=True)
+    leg = f"leg2_{train_base}" if leg_pick.startswith("one") else "leg1"
+    pr = metrics["paired"]
+    pr = pr[(pr["leg"] == leg) & (pr["b_seed"] == 42)]
+    opps = ["xgb_lag", "gxgb", "sar_gm"]
+    fig = go.Figure()
+    for j, a in enumerate(["tabpfn_t0", "tabpfn_cep"]):
+        sub = pr[pr["a"] == a].set_index("b").reindex(opps)
+        fig.add_scatter(
+            x=sub["diff"], y=[i + (-0.14 if j == 0 else 0.14) for i in range(len(opps))], mode="markers",
+            name=MODELS[a][1],
+            marker=dict(color=MODELS[a][2], size=12, symbol="circle" if j == 0 else "diamond",
+                        line=dict(color="#fcfcfb", width=2)),
+            error_x=dict(type="data", symmetric=False, array=sub["ci_hi"] - sub["diff"],
+                         arrayminus=sub["diff"] - sub["ci_lo"], color=MODELS[a][2], thickness=2, width=0),
+            customdata=np.c_[sub["ci_lo"], sub["ci_hi"], sub["blocks_won"], sub["p"]],
+            text=["vs " + MODELS[o][1] for o in opps],
+            hovertemplate="%{text}<br>ΔRMSE %{x:+.3f} [%{customdata[0]:+.3f}, %{customdata[1]:+.3f}]"
+                          "<br>%{customdata[2]:.0f} of 10 blocks won · Wilcoxon p %{customdata[3]:.3f}"
+                          "<extra>" + MODELS[a][1] + "</extra>")
+    fig.add_vline(x=0, line_color=MUTED, line_dash="dot")
+    fig.update_yaxes(tickvals=list(range(len(opps))), ticktext=["vs " + MODELS[o][1] for o in opps],
+                     autorange="reversed", showgrid=False)
+    fig.update_layout(xaxis_title="ΔRMSE (ln) with block-bootstrap 95 % CI · negative = TabPFN-3.5 better")
+    fig = base_layout(fig, height=340)
+    fig.update_layout(legend=dict(orientation="h", y=1.14, x=0), margin=dict(t=50))
+    fig.update_yaxes(zeroline=False)
+    st.plotly_chart(fig, width="stretch")
+    tbl = pr.assign(variant=pr["a"].map(lambda k: MODELS[k][1]), opponent=pr["b"].map(lambda k: MODELS[k][1]))
+    tbl = tbl.set_index("b").loc[[o for o in opps if o in set(pr["b"])]].reset_index()
+    st.dataframe(pd.DataFrame({
+        "TabPFN-3.5 variant": tbl["variant"], "opponent (seed 42)": tbl["opponent"],
+        "ΔRMSE (ln)": tbl["diff"].map(lambda v: f"{v:+.4f}"),
+        "95 % CI": [f"[{lo:+.4f}, {hi:+.4f}]" for lo, hi in zip(tbl["ci_lo"], tbl["ci_hi"])],
+        "blocks won": tbl["blocks_won"].astype(int).astype(str) + "/10",
+        "Wilcoxon p": tbl["p"].map(lambda v: f"{v:.3f}")}).sort_values(["TabPFN-3.5 variant"], kind="stable"),
+        hide_index=True, width="stretch")
+    st.caption("Against the opponent's seed 42; the verdicts above hold against each of its seeds. The one-year-ahead "
+               "view follows the training base in the sidebar. Read from `results/variants_summary.json` and "
+               "`results/postal_code_vs_baselines.json`; no model is re-run.")
 
     st.markdown("""
-**Two honest footnotes.** Every model under-predicts 2026 — prices rose — and the two non-linear
-learners more so: they hold the last observed level of the month index instead of extrapolating a
-trend. Practice would apply an index; here it is reported, not corrected. And in the block CV the
-plain-table model matched the fully spatial XGBoost on error while leaving more spatial structure in
-its residuals: the specialist earns its keep when the test is a part of the city nobody has seen.
+**The limitation.** Every model under-predicts 2026 — prices rose — and the non-linear learners
+more so: they hold the last observed level of the month index instead of extrapolating a trend.
+Practice would apply an index; here it is reported, not corrected.
 """)
 
 
@@ -300,7 +379,7 @@ its residuals: the specialist earns its keep when the test is a part of the city
 with tab_map:
     left, right = st.columns([1, 3])
     with left:
-        model = st.selectbox("Model", avail, format_func=lambda k: MODELS[k][0])
+        model = st.selectbox("Model", avail, format_func=lambda k: MODELS[k][1], help="Seed-42 predictions of each model on the 2026 transactions.")
         mode = st.radio("Show", ["Grid cells (≈500 m)", "Individual transactions (sample)"])
         stat = st.radio("Colour by", ["mean residual (ln)", "RMSE (ln)"]) if mode.startswith("Grid") else "residual"
         n_pts = st.slider("Points to draw", 2000, 15000, 6000, step=1000) if mode.startswith("Ind") else None
@@ -338,7 +417,7 @@ with tab_map:
                 hovertemplate="SQL %{customdata[0]} · %{customdata[1]}<br>R$/m² %{customdata[2]:,.0f}<br>residual %{customdata[3]:+.3f}<extra></extra>")]
         st.plotly_chart(geo_figure(traces, (-23.60, -46.62), 9.6, 620, basemap, span=0.24), width="stretch")
 
-    st.markdown("#### Same map, all four models — RMSE (ln) per block")
+    st.markdown("#### All models — RMSE (ln) per block")
     per_block = []
     for r in metrics[f"oot_{train_base}"]:
         pb = r["per_block"][["block", "n", "rmse_ln", "mape_pct"]].copy()
