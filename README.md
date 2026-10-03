@@ -3,7 +3,7 @@
 *TabPFN-3.5 with the plain table vs models that see space explicitly, on 82,187 real transaction
 prices from São Paulo, tested one year ahead on 47,810 more.*
 
-Prior Labs TabPFN-3.5 Hackathon entry · **Live app: [tabpfn-itbi-sp.streamlit.app](https://tabpfn-itbi-sp.streamlit.app)** · [app manual](app/MANUAL.md) · Apache-2.0
+Prior Labs TabPFN-3.5 Hackathon entry · **Live app: [tabpfn-itbi-sp.streamlit.app](https://tabpfn-itbi-sp.streamlit.app)** · **Video: [youtu.be/S1wQqxKR-hI](https://youtu.be/S1wQqxKR-hI)** · [app manual](app/MANUAL.md) · Apache-2.0
 
 ---
 
@@ -114,9 +114,8 @@ the ITBI form (*Imposto sobre Transmissão de Bens Imóveis*, the municipal tran
 month, for the whole city: 82,187 cleaned transactions in 2025 for training, 47,810 from January to
 July 2026 for testing. Three property types (apartment, house, commercial), physical attributes from
 the IPTU property-tax register, coordinates from the fiscal-block centroids of the GeoSampa cadastre.
-An earlier study by the author on 5,005 Belo Horizonte apartment *listings* (awarded at CEAD 2026,
-`paper/`) found TabPFN v3 ahead of OLS, SAR, SEM and PS-SAR; this is the harder, larger, real-price
-version of that question.
+This is the larger, noisier and harder version of the question asked in the author's award-winning
+study on Belo Horizonte listings ([earlier work](#earlier-work-by-the-author)).
 
 Declared prices come with a known trap: the tax base is max(declared price, assessed reference value),
 so under-declared cash deals bunch exactly at the assessed value. The cleaning pipeline detects and
@@ -142,6 +141,30 @@ with per-step counts is in [`data/filter_report.md`](data/filter_report.md) and
 | GeoSampa | Open geoportal of the São Paulo City Hall |
 
 </details>
+
+## Earlier work by the author
+
+This entry is the third step of a line of work on tabular foundation models in property valuation.
+
+1. **Transformers na avaliação de imóveis residenciais: comparação entre regressão linear múltipla,
+   FT-Transformer e TabPFN v2 com dados de ITBI de São Paulo** (*Transformers in residential property
+   valuation: a comparison of multiple linear regression, FT-Transformer and TabPFN v2 on São Paulo
+   ITBI data*). I Fórum Nacional IGEL & SOBREA, August 2026
+   ([igelsobrea.com.br](https://igelsobrea.com.br)). On transaction prices from the same São Paulo
+   transfer tax, TabPFN v2 outperformed both the FT-Transformer and the multiple linear regression
+   (OLS) model.
+2. **Non-linear methods versus spatial regression in apartment valuation: a comparative study in
+   Belo Horizonte** (*Métodos não lineares versus regressão espacial na avaliação de apartamentos: um
+   estudo comparativo em Belo Horizonte*). III CEAD, Conferência de Engenharia de Avaliações e
+   Diagnóstica, September 2026 ([PDF](paper/M%C3%89TODOS_N%C3%83O_LINEARES_VERSUS_REGRESS%C3%83O_ESPACIAL_NA_AVALIA%C3%87%C3%83O_DE_APARTAMENTOS_UM_ESTUDO_COMPARATIVO_EM_BELO_HORIZONTE_final_.pdf)). On 5,005 apartment listings, TabPFN v3 was
+   compared with linear and non-linear spatial econometric models (among them OLS, SAR, SEM and
+   PS-SAR) and outperformed every model in the comparison. The paper received the conference's award
+   for the best work in appraisal engineering.
+
+This repository extends the Belo Horizonte study to a larger, noisier and more complex base: 130,000
+declared transaction prices instead of 5,005 listings, three property types instead of apartments
+only, tax under-declaration to detect and remove, a one-year-ahead test on top of the spatial block
+CV, and TabPFN-3.5 against spatial specialists that include a geographically weighted XGBoost.
 
 ## The protocol
 
@@ -406,9 +429,10 @@ strongest inputs.
 
 ## The app
 
-Live at [tabpfn-itbi-sp.streamlit.app](https://tabpfn-itbi-sp.streamlit.app), or `streamlit run app/app.py` locally. Four tabs on the versioned results: the claim and scoreboard, a map
-of where each model fails on the 2026 transactions, an inspector for any single transaction (four
-estimates, the k-NN-8 neighbourhood the baselines saw, SHAP for the 50 explained properties), and,
+Live at [tabpfn-itbi-sp.streamlit.app](https://tabpfn-itbi-sp.streamlit.app), or `streamlit run app/app.py` locally; a narrated
+five-minute walkthrough is on [YouTube](https://youtu.be/S1wQqxKR-hI). Four tabs on the versioned results: the claim and
+scoreboard, a map of where each model fails on the 2026 transactions, an inspector for any single
+transaction (every model's estimate, the k-NN-8 neighbourhood the baselines saw, SHAP for the 50 explained properties), and,
 with a `TABPFN_TOKEN`, a live TabPFN-3.5 estimate for a property you describe. Install, deploy and
 troubleshoot in [`app/MANUAL.md`](app/MANUAL.md).
 
