@@ -1,0 +1,22 @@
+{
+  "a": "tabpfn_t0_lag_level_a",
+  "b": "xgb_lag_level_a",
+  "metric": "rmse_ln",
+  "seed": 42,
+  "wilcoxon_blocks": {
+    "n_folds": 10,
+    "statistic": 0.0,
+    "p_value": 0.001953125,
+    "mean_diff": 0.033342779971471295
+  },
+  "block_bootstrap": {
+    "metric": "rmse_ln",
+    "n_boot": 2000,
+    "diff": 0.03375237194940994,
+    "ci95": [
+      0.03003136574244684,
+      0.037428954854777687
+    ],
+    "p_boot_two_sided": 0.0
+  }
+}

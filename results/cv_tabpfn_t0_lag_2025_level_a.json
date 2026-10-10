@@ -1,0 +1,191 @@
+{
+  "label": "tabpfn_t0_lag_2025_level_a",
+  "n": 24000,
+  "seeds": [
+    42
+  ],
+  "folds": [
+    {
+      "block": 0,
+      "n_test": 4883
+    },
+    {
+      "block": 1,
+      "n_test": 2488
+    },
+    {
+      "block": 2,
+      "n_test": 1669
+    },
+    {
+      "block": 3,
+      "n_test": 2129
+    },
+    {
+      "block": 4,
+      "n_test": 2030
+    },
+    {
+      "block": 5,
+      "n_test": 1202
+    },
+    {
+      "block": 6,
+      "n_test": 2932
+    },
+    {
+      "block": 7,
+      "n_test": 2144
+    },
+    {
+      "block": 8,
+      "n_test": 2011
+    },
+    {
+      "block": 9,
+      "n_test": 2512
+    }
+  ],
+  "knn_k": 8,
+  "jitter_m": 0.5,
+  "per_seed": {
+    "42": {
+      "pooled": {
+        "n": 24000,
+        "rmse_ln": 0.3926814074005188,
+        "mae_ln": 0.2957070300350507,
+        "mape_pct": 33.14243759313128,
+        "median_ape_pct": 22.21531189329905,
+        "r2_ln": 0.34952473661320105
+      },
+      "per_fold": [
+        {
+          "n": 4883,
+          "rmse_ln": 0.48252631797700307,
+          "mae_ln": 0.34780997674267433,
+          "mape_pct": 45.03196301196834,
+          "median_ape_pct": 23.586008607204953,
+          "r2_ln": 0.18848849940032708,
+          "block": 0
+        },
+        {
+          "n": 2488,
+          "rmse_ln": 0.3326424477970804,
+          "mae_ln": 0.2606369395811075,
+          "mape_pct": 25.532548998252757,
+          "median_ape_pct": 20.49291474241729,
+          "r2_ln": 0.3906184718673653,
+          "block": 1
+        },
+        {
+          "n": 1669,
+          "rmse_ln": 0.3481931557633079,
+          "mae_ln": 0.26515759535481503,
+          "mape_pct": 26.64818573606261,
+          "median_ape_pct": 20.006518681024097,
+          "r2_ln": 0.3700382222978873,
+          "block": 2
+        },
+        {
+          "n": 2129,
+          "rmse_ln": 0.32761964318963527,
+          "mae_ln": 0.24865705797044027,
+          "mape_pct": 27.22855547648082,
+          "median_ape_pct": 19.15161192179465,
+          "r2_ln": 0.3661410446793123,
+          "block": 3
+        },
+        {
+          "n": 2030,
+          "rmse_ln": 0.3837662444809662,
+          "mae_ln": 0.30387582041359884,
+          "mape_pct": 27.1362823688665,
+          "median_ape_pct": 23.59064227139018,
+          "r2_ln": 0.04127739211581427,
+          "block": 4
+        },
+        {
+          "n": 1202,
+          "rmse_ln": 0.3371961476160043,
+          "mae_ln": 0.2694508882436895,
+          "mape_pct": 27.865642632804526,
+          "median_ape_pct": 22.51826900977467,
+          "r2_ln": 0.3955761796528262,
+          "block": 5
+        },
+        {
+          "n": 2932,
+          "rmse_ln": 0.37645303176985623,
+          "mae_ln": 0.29552089639666296,
+          "mape_pct": 30.96974321667284,
+          "median_ape_pct": 23.448231055399027,
+          "r2_ln": 0.3211346963075338,
+          "block": 6
+        },
+        {
+          "n": 2144,
+          "rmse_ln": 0.4209023961516676,
+          "mae_ln": 0.3158659255497491,
+          "mape_pct": 40.98697366987142,
+          "median_ape_pct": 24.148395166947502,
+          "r2_ln": 0.11941982912835036,
+          "block": 7
+        },
+        {
+          "n": 2011,
+          "rmse_ln": 0.36360653964764056,
+          "mae_ln": 0.2799774560216053,
+          "mape_pct": 32.11781300246427,
+          "median_ape_pct": 21.833075284447634,
+          "r2_ln": 0.2439465864983642,
+          "block": 8
+        },
+        {
+          "n": 2512,
+          "rmse_ln": 0.37900358889352526,
+          "mae_ln": 0.290900730844364,
+          "mape_pct": 30.93455098577453,
+          "median_ape_pct": 22.072176722642183,
+          "r2_ln": 0.14579574004322893,
+          "block": 9
+        }
+      ],
+      "moran_oof": {
+        "I": 0.34283498139026836,
+        "z_norm": 113.11319440566368,
+        "p_norm": 0.0
+      },
+      "runtime_s": 111.6
+    }
+  },
+  "model": {
+    "family": "TabPFN",
+    "version": "v3.5",
+    "thinking": "off",
+    "group_col": null,
+    "thinking_metric": null,
+    "features": [
+      "area_construida_m2",
+      "area_terreno_m2",
+      "idade",
+      "padrao_nivel",
+      "dist_estacao_m",
+      "mes_idx",
+      "lat",
+      "lon",
+      "tipo_imovel",
+      "knn8_lag_ln_vu"
+    ],
+    "explicit_spatial_modelling": true,
+    "nominal_location": [],
+    "coordinates": true,
+    "station_distance": true,
+    "nominal_as": null,
+    "text_columns": [],
+    "spatial_lag": {
+      "k": 8,
+      "construction": "fold-internal; leave-one-out on train, training neighbours only for test (= model_xgb)"
+    },
+    "analysis": "ablation"
+  }
+}
