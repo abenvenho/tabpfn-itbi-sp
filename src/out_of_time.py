@@ -212,7 +212,8 @@ def make_factory(args, train_df: pd.DataFrame, out_dir: Path, label: str):
                                           nominal_categorical=args.nominal_categorical,
                                           coords=not args.no_coords,
                                           station=not args.no_station,
-                                          text=text_cols(args))
+                                          text=text_cols(args),
+                                          spatial_lag=args.spatial_lag)
     raise ValueError(args.model)
 
 
@@ -242,7 +243,8 @@ def default_label(args) -> str:
                 + ("_grp" if args.group_col else ""))
         from .model_tabpfn import nominal_tag
         base += nominal_tag(nominal_cols(args), args.nominal_categorical,
-                            not args.no_coords, not args.no_station, text_cols(args))
+                            not args.no_coords, not args.no_station, text_cols(args),
+                            lag=args.spatial_lag)
     return f"{base}_{args.train}" + ("_fin" if args.financed_only else "")
 
 
@@ -268,6 +270,9 @@ def main() -> None:
                     help="TabPFN ABLATION: also drop the distance to the nearest station")
     ap.add_argument("--text", nargs="*", default=[], choices=["complemento", "referencia"],
                     help="TabPFN TEXT VARIANT: add the unit complement and/or the Referência field")
+    ap.add_argument("--spatial-lag", action="store_true",
+                    help="TabPFN VARIANT: add the k-NN-8 spatial lag of ln_vu, computed on the "
+                         "2025 training base, as one extra column (= the XGB baseline's feature)")
     ap.add_argument("--label", default=None)
     ap.add_argument("--financed-only", action="store_true",
                     help="robustness: financed transactions only, in training and in 2026")

@@ -129,6 +129,39 @@ neighbours in the same building by −0.026 in ln; the building name is the
 open question. A gain would show in leg 2 (the same buildings sell again);
 leg 1 is again a near-negative control.
 
+Spatial-lag variant: the baselines' lag as a column (``--spatial-lag``)
+------------------------------------------------------------------------
+The converse of the ablations above: instead of asking what TabPFN-3.5 does
+with *less* spatial information, this variant hands it the strongest piece of
+explicit spatial engineering the baselines have — the fold-internal k-NN-8
+spatial lag of XGBoost (mean ``ln_vu`` of the 8 nearest TRAINING neighbours;
+leave-one-out for training rows, training-only neighbours for test rows;
+``protocol.knn_spatial_lag``, same jitter rule, same k). One column appended
+to the plain T0 table, nothing else changed. The design is now symmetric
+with ``xgb_lag``: same information set, same lag construction.
+
+This is a variant, not part of the main analysis: the main hypothesis is
+about the *raw* table, and a run with an engineered spatial feature can
+neither confirm nor refute it. What it answers is a referee's question the
+main result raises: TabPFN-3.5 beats XGB+lag on errors while leaving *more*
+spatial autocorrelation in the residuals (leg 1: Moran I 0.348 vs 0.309) —
+is the residual clustering an information gap the lag closes, or does the
+model already extract what the lag carries from the coordinates?
+
+Expectations, written before the runs (reference values: seed 42):
+
+* leg 1 (Level A CV): the lag should cut the residual Moran's I toward the
+  XGB+lag level (0.348 -> ~0.31); RMSE_ln moves little (0.3938, XGB+lag
+  0.3846) — the coordinates already carry most of what the lag encodes.
+* leg 2 (2025 -> 2026): little to no gain, possibly a small loss. TabPFN
+  already has the *lowest* residual Moran's I there (0.122 / 0.092 on 24k /
+  82k vs XGB+lag 0.140 / 0.107), so there is less missing spatial signal for
+  the lag to supply; and a lag computed from 1-7-month-old neighbours enters
+  with a staleness the CV leg does not have.
+* what would change the reading: a clear leg-1 RMSE gain on top of the Moran
+  drop would mean the plain table was leaving usable spatial signal on the
+  table, weakening the "raw columns suffice" claim.
+
 Predictive quantiles (for the 80 % intervals used later) are requested only
 from zero-shot fits: the server returns point predictions only for models
 fitted in thinking mode.
@@ -155,7 +188,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .protocol import BLOCK_COL, SEED, load_base, run_cv, compare_models
+from .protocol import (BLOCK_COL, KNN_K, SEED, compare_models,
+                       jittered_coords, knn_spatial_lag, load_base, run_cv)
 
 TARGET = "ln_vu"
 MODEL_VERSION = "v3.5"
@@ -170,6 +204,7 @@ REFERENCE_FILE = Path("data/itbi_sp_reference_field.csv.gz")
 _REF_CACHE: dict = {}
 COORDINATES = ["lat", "lon"]
 STATION = "dist_estacao_m"              # computed from the coordinates
+LAG_NAME = "knn8_lag_ln_vu"             # same name and construction as model_xgb
 
 
 def nominal_column(df: pd.DataFrame, col: str) -> pd.Series:
@@ -220,11 +255,12 @@ def text_column(df: pd.DataFrame, col: str) -> pd.Series:
 
 
 def feature_names(nominal: tuple[str, ...] = (), coords: bool = True,
-                  station: bool = True, text: tuple[str, ...] = ()) -> list[str]:
+                  station: bool = True, text: tuple[str, ...] = (),
+                  lag: bool = False) -> list[str]:
     """Column order of the table sent to the model."""
     base = [c for c in T0_FEATURES
             if (coords or c not in COORDINATES) and (station or c != STATION)]
-    return base + list(nominal) + list(text)
+    return base + list(nominal) + list(text) + ([LAG_NAME] if lag else [])
 
 
 def t0_features(df: pd.DataFrame, group_col: str | None = None,
@@ -259,10 +295,11 @@ def t0_features(df: pd.DataFrame, group_col: str | None = None,
 
 def nominal_tag(nominal: tuple[str, ...], as_categorical: bool = False,
                 coords: bool = True, station: bool = True,
-                text: tuple[str, ...] = ()) -> str:
-    """Label fragment for an ablation run, e.g. ``_nom_bairro_cep``,
-    ``_nocoord_nom_cep`` or ``_nocoord_nostation_nom_cep_num``."""
-    tag = ("" if coords else "_nocoord") + ("" if station else "_nostation")
+                text: tuple[str, ...] = (), lag: bool = False) -> str:
+    """Label fragment for an ablation/variant run, e.g. ``_lag``,
+    ``_nom_bairro_cep``, ``_nocoord_nom_cep`` or ``_nocoord_nostation_nom_cep_num``."""
+    tag = (("_lag" if lag else "") + ("" if coords else "_nocoord")
+           + ("" if station else "_nostation"))
     if nominal:
         tag += "_nom_" + "_".join(nominal) + ("_cat" if as_categorical else "")
     if text:
@@ -283,9 +320,10 @@ class TabPFNT0Model:
                  ignore_pretraining_limits: bool = False,
                  nominal: tuple[str, ...] = (), nominal_categorical: bool = False,
                  coords: bool = True, station: bool = True,
-                 text: tuple[str, ...] = ()):
+                 text: tuple[str, ...] = (), spatial_lag: bool = False):
         self.cache_dir, self.block, self.seed = cache_dir, block, seed
         self.text = tuple(text)
+        self.spatial_lag = spatial_lag
         self.nominal, self.nominal_categorical = tuple(nominal), nominal_categorical
         self.coords, self.station = coords, station
         self.thinking, self.group_col = thinking, group_col
@@ -316,6 +354,11 @@ class TabPFNT0Model:
 
     def fit(self, train_df: pd.DataFrame):
         self.n_train_ = len(train_df)
+        if self.spatial_lag:
+            # kept for predict(): the lag of a test row uses TRAINING
+            # neighbours only (same jitter rule and k as model_xgb)
+            self._train_xy = jittered_coords(train_df, seed=self.seed)
+            self._train_y = train_df[TARGET].to_numpy(dtype=float)
         if self._p("pred_mean.npy").exists():
             self.model_ = None                      # nothing to fit: cached
             return self
@@ -327,6 +370,10 @@ class TabPFNT0Model:
         X = t0_features(train_df, self.group_col, self.nominal, self.coords, self.station,
                         self.text)
         y = train_df[TARGET].to_numpy(dtype=float)
+        if self.spatial_lag:                        # leave-one-out on train
+            X[LAG_NAME] = knn_spatial_lag(self._train_xy, self._train_y,
+                                          self._train_xy, k=KNN_K,
+                                          exclude_self=True)
         t0 = time.time()
         self.model_ = self._make().fit(X, y)
         self.model_.save_model(rec)
@@ -335,7 +382,7 @@ class TabPFNT0Model:
                 "nominal": list(self.nominal), "coordinates": self.coords,
                 "station_distance": self.station,
                 "nominal_categorical": self.nominal_categorical,
-                "text": list(self.text),
+                "text": list(self.text), "spatial_lag": self.spatial_lag,
                 "fit_s": round(time.time() - t0, 1)}
         self._p("fit_meta.json").write_text(json.dumps(meta, indent=2))
         print(f"  block {self.block}: fit {meta['fit_s']:.0f}s "
@@ -348,6 +395,10 @@ class TabPFNT0Model:
             return np.load(p)
         X = t0_features(test_df, self.group_col, self.nominal, self.coords, self.station,
                         self.text)
+        if self.spatial_lag:                        # training neighbours only
+            X[LAG_NAME] = knn_spatial_lag(self._train_xy, self._train_y,
+                                          jittered_coords(test_df, seed=self.seed),
+                                          k=KNN_K)
         out = []
         for i in range(0, len(X), self.chunk):
             out.append(np.asarray(self.model_.predict(X.iloc[i:i + self.chunk]),
@@ -408,6 +459,9 @@ def main() -> None:
                     help="ABLATION: also drop the distance to the nearest station (strict version)")
     ap.add_argument("--text", nargs="*", default=[], choices=list(TEXT_COLUMNS),
                     help="TEXT VARIANT: add the unit complement and/or the Referência field as free text")
+    ap.add_argument("--spatial-lag", action="store_true",
+                    help="VARIANT: add the fold-internal k-NN-8 spatial lag of ln_vu "
+                         "(the XGB baseline's engineered feature) as one extra column")
     ap.add_argument("--ignore-limits", action="store_true",
                     help="ignore_pretraining_limits (if the server objects to the cardinality)")
     ap.add_argument("--dry-run", action="store_true",
@@ -422,12 +476,13 @@ def main() -> None:
     nominal = tuple(c for c in NOMINAL_COLUMNS if c in args.nominal)   # fixed order
     coords, station = not args.no_coords, not args.no_station
     text = tuple(c for c in TEXT_COLUMNS if c in args.text)            # fixed order
-    features = feature_names(nominal, coords, station, text)
-    variant = bool(nominal or text or not coords or not station)
+    features = feature_names(nominal, coords, station, text, lag=args.spatial_lag)
+    variant = bool(nominal or text or not coords or not station or args.spatial_lag)
     label = args.label or ("tabpfn_t0"
                            + ("" if args.thinking == "off" else f"_think_{args.thinking}")
                            + ("_grp" if group_col else "")
-                           + nominal_tag(nominal, args.nominal_categorical, coords, station, text) + "_"
+                           + nominal_tag(nominal, args.nominal_categorical, coords, station, text,
+                                         lag=args.spatial_lag) + "_"
                            + Path(args.data).stem.replace("itbi_sp_", "")
                            + ("_fin" if args.financed_only else ""))
     folds_order = sorted(df[BLOCK_COL].unique().tolist())
@@ -469,7 +524,8 @@ def main() -> None:
                             quantiles=args.quantiles, chunk=args.chunk,
                             ignore_pretraining_limits=args.ignore_limits,
                             nominal=nominal, nominal_categorical=args.nominal_categorical,
-                            coords=coords, station=station, text=text)
+                            coords=coords, station=station, text=text,
+                            spatial_lag=args.spatial_lag)
     t0 = time.time()
     res = run_cv(factory, df, label=label, seeds=tuple(args.seeds), out_dir=out_dir)
     s0 = str(args.seeds[0])
@@ -485,12 +541,17 @@ def main() -> None:
     meta["model"] = {"family": "TabPFN", "version": MODEL_VERSION,
                      "thinking": args.thinking, "group_col": group_col,
                      "thinking_metric": "rmse" if args.thinking != "off" else None,
-                     "features": features, "explicit_spatial_modelling": False,
+                     "features": features,
+                     "explicit_spatial_modelling": bool(args.spatial_lag),
                      "nominal_location": list(nominal), "coordinates": coords,
                      "station_distance": station,
                      "nominal_as": (None if not nominal else
                                     "categorical" if args.nominal_categorical else "string"),
                      "text_columns": list(text),
+                     "spatial_lag": (None if not args.spatial_lag else
+                                     {"k": KNN_K, "construction":
+                                      "fold-internal; leave-one-out on train, "
+                                      "training neighbours only for test (= model_xgb)"}),
                      "analysis": "ablation" if variant else "main"}
     (out_dir / f"cv_{label}.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
