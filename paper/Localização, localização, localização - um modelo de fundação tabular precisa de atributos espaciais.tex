@@ -199,7 +199,7 @@ um XGBoost geograficamente ponderado somam-se às \emph{baselines} econométrica
 A Prefeitura de São Paulo publica todas as guias pagas do imposto de transmissão de bens
 imóveis (ITBI) com o preço de transação declarado, a chave cadastral (SQL: setor, quadra, lote)
 e os atributos físicos do imóvel vindos do cadastro do IPTU: áreas construída e de terreno,
-uso, padrão construtivo, ano de construção corrigido. O arquivo de 2025 contém 230.525 guias e
+uso, padrão construtivo e o ano de construção corrigido (ACC). O arquivo de 2025 contém 230.525 guias e
 o de janeiro--julho de 2026, 135.655. As coordenadas vêm dos centroides dos polígonos de quadra
 fiscal do cadastro municipal (GeoSampa), de modo que todos os imóveis de uma mesma quadra
 compartilham a localização; a distância à estação de metrô ou trem mais próxima é calculada a
@@ -231,7 +231,7 @@ apartamentos, 7.000 casas, 5.000 unidades comerciais; ``Nível~A'') é usada ond
 7 & ACC plausível ($1900 \le \text{ACC} \le$ ano da transação) & 90.927 & 51.918 \\
 8 & Deduplicação em (chave, data, preço) & 90.673 & 51.810 \\
 9 & Preço declarado $\ge$ R\$ 10.000 & 89.078 & 51.202 \\
-10 & Razão preço / valor venal de referência em $[0{,}3,\ 5]$ & 87.488 & 50.430 \\
+10 & Razão preço / valor venal de referência (VVR) em $[0{,}3;\ 5]$ & 87.488 & 50.430 \\
 11 & Subdeclaração: excluídas as compras à vista coladas no VVR & 84.263 & 48.879 \\
 12 & Cercas de Tukey ($1{,}5$ IQR) em $\ln(\text{\Rsqm})$, por tipo (cercas de 2025) & 82.193 & 47.814 \\
 13 & Junção ao centroide da quadra fiscal (99,99\%) & 82.187 & 47.810 \\
@@ -274,8 +274,7 @@ Moran do logaritmo bruto do valor unitário, na matriz $k$-NN-8 usada em todo o 
 unitário de um imóvel está próximo do de seus vizinhos muito além do acaso, exatamente a
 estrutura que as \emph{baselines} espaciais foram construídas para explorar. A
 Figura~\ref{fig:blocks}(a) mostra como os dez blocos espaciais recobrem essa estrutura sobre a
-cidade. Como as coordenadas são centroides de quadra fiscal, a localização é resolvida na
-quadra, não no endereço --- uma escolha conservadora compartilhada por todos os modelos.
+cidade. Como as coordenadas são centroides de quadra fiscal, a localização é resolvida na quadra em vez do endereço --- uma escolha conservadora compartilhada por todos os modelos.
 
 \section{Métodos}
 \label{sec:methods}
@@ -359,8 +358,9 @@ nos dois anos; $0{,}6\%$ das linhas de 2026 compartilham chave cadastral com o N
 
 \paragraph{Métricas e testes.} RMSE, MAE e $R^2$ na escala logarítmica, MAPE na escala de
 preço, resíduo médio (viés). Autocorrelação espacial residual pelo $I$ de Moran
-\citep{moran1950} sobre a matriz $k$-NN-8 das coordenadas de teste. Comparações pareadas sobre
-os dez blocos: teste de postos sinalizados de Wilcoxon exato sobre o RMSE por bloco e
+\citep{moran1950} sobre a matriz $k$-NN-8 das coordenadas de teste. Comparações pareadas sobre os dez blocos (em 2026,
+cada transação é atribuída ao bloco do centroide de $K$-médias de 2025 mais próximo): teste de
+postos sinalizados de Wilcoxon exato sobre o RMSE por bloco e
 \emph{bootstrap} por blocos (2.000 reamostragens de blocos) para a diferença agregada, com
 intervalo percentílico de 95\%. Onde o modelo é estocástico, três sementes (42, 43, 44) e a
 faixa entre sementes; uma rodada do TabPFN (semente 42) é pareada contra cada semente do
@@ -376,7 +376,8 @@ oponente estocástico.
 \includegraphics[width=\textwidth]{fig1_blocks_map.png}
 \caption{(a) Os dez blocos de $K$-médias da amostra do Nível A, cada um deixado de fora por
 vez. (b) Diferença de RMSE por bloco, TabPFN-3.5 $-$ XGBoost+defasagem, no teste de 2026 com os
-dois modelos ajustados na base completa de 2025; negativa em todos os blocos.}
+dois modelos ajustados na base completa de 2025; negativa em todos os blocos. Os rótulos
+internos das figuras permanecem em inglês, comuns às duas versões do artigo.}
 \label{fig:blocks}
 \end{figure}
 
@@ -414,9 +415,10 @@ $-0{,}013$ a $-0{,}016$ nas três sementes daquele modelo, todos os intervalos c
 ou 7 blocos vencidos. As duas variantes de XGBoost não são intercambiáveis: a geograficamente
 ponderada perde para o XGBoost+defasagem por $+0{,}023$ a $+0{,}025$ (1 ou 2 blocos vencidos,
 $p = 0{,}027$--$0{,}037$), de modo que o XGBoost global plenamente espacial é o oponente mais
-duro desta perna. O modo \emph{thinking} melhora o \emph{zero-shot} por uma margem pequena e
-consistente ($-0{,}005$ $[-0{,}008;\ -0{,}001]$ contra a semente 42, cerca de $-0{,}002$ contra
-as demais) e entrega o menor MAPE da tabela; o esforço alto custa cerca de 13 vezes mais por
+duro desta perna. O modo \emph{thinking} reduz o erro do \emph{zero-shot} por uma margem
+pequena ($-0{,}005$ $[-0{,}008;\ -0{,}001]$ contra a semente 42, 7 de 10 blocos, embora o
+Wilcoxon exato não alcance significância, $p = 0{,}105$; cerca de $-0{,}002$ contra as demais) e
+entrega o menor MAPE da tabela; o esforço alto custa cerca de 13 vezes mais por
 dobra e não acrescenta nada além de ruído.
 
 No critério dos resíduos, a hipótese é parcialmente refutada nesta perna. O $I$ de Moran do
@@ -427,7 +429,7 @@ $[-0{,}024;\ -0{,}004]$ e reduz o $I$ residual de $0{,}355$ para $0{,}309$ --- o
 mensurável de modelar o espaço explicitamente quando o teste é uma parte da cidade que nenhum
 modelo viu. A refutação é parcial e fica registrada.
 
-Os erros são grandes em termos absolutos ($R^2$ de $0{,}29$--$0{,}38$ contra $0{,}538$ no
+Os erros são grandes em termos absolutos ($R^2$ de $0{,}29$--$0{,}38$ nos modelos não lineares, contra $0{,}538$ no
 estudo com ofertas): preços declarados, três tipologias e coordenadas de centroide somam
 ruído, e todos os modelos deixam estrutura espacial para trás nesta perna.
 
@@ -454,14 +456,14 @@ Nível A (24k) & Hedônico por OLS & 0,404 & 32,4\% & 0,185 & $+0{,}033$ & 0,408
 \midrule
 Completa (82k) & Hedônico por OLS & 0,401 & 32,4\% & 0,194 & $+0{,}023$ & 0,397 \\
  & SAR de defasagem & 0,326 & 25,0\% & 0,470 & $+0{,}031$ & 0,134 \\
- & XGBoost + defasagem & 0,294\textsuperscript{a} & 21,5\%\textsuperscript{a} & 0,57 & $+0{,}10$\textsuperscript{a} & 0,107\textsuperscript{a} \\
- & XGBoost geograficamente ponderado & 0,298\textsuperscript{b} & 22,1\% & 0,56 & $+0{,}06$\textsuperscript{b} & 0,163\textsuperscript{b} \\
+  & XGBoost + defasagem & 0,294\textsuperscript{a} & 21,5\%\textsuperscript{a} & 0,568 & $+0{,}103$\textsuperscript{a} & 0,107\textsuperscript{a} \\
+  & XGBoost geograficamente ponderado & 0,298\textsuperscript{b} & 22,1\% & 0,557 & $+0{,}065$\textsuperscript{b} & 0,163\textsuperscript{b} \\
  & TabPFN-3.5, \emph{zero-shot} & \textbf{0,265} & \textbf{19,5\%} & \textbf{0,649} & $+0{,}058$ & \textbf{0,092} \\
 \bottomrule
 \end{tabular}\\[2pt]
 {\scriptsize \textsuperscript{a}\,semente 42; três sementes: RMSE 0,283--0,294, MAPE
-20,9--21,5\%, viés $+0{,}07$--$+0{,}10$, $I$ 0,103--0,107.\quad
-\textsuperscript{b}\,semente 42; três sementes: RMSE 0,298--0,301, viés $+0{,}06$--$+0{,}08$,
+20,9--21,5\%, viés $+0{,}070$--$+0{,}103$, $I$ 0,103--0,107.\quad
+\textsuperscript{b}\,semente 42; três sementes: RMSE 0,298--0,301, viés $+0{,}065$--$+0{,}078$,
 $I$ 0,163--0,166.}
 \end{table}
 
@@ -557,8 +559,7 @@ $= -0{,}017$ $[-0{,}032;\ -0{,}003]$, $p = 0{,}049$, 8 de 10 blocos contra a sem
 9 de 10 contra as sementes 43 e 44) e a refutação parcial do critério de resíduos não
 reaparece: ele deixa menos estrutura espacial que o XGBoost espacial nas duas pernas ($0{,}279$
 contra $0{,}327$--$0{,}340$ na VC). Os resultados principais não dependem das compras à vista
-retidas pelo filtro de subdeclaração; se algo, os preços à vista, mais ruidosos, são onde o
-aprendiz explicitamente espacial se segura. O XGBoost geograficamente ponderado não foi rodado
+retidas pelo filtro de subdeclaração; se algo, os preços à vista, mais ruidosos, são onde o aprendiz explicitamente espacial resiste melhor. O XGBoost geograficamente ponderado não foi rodado
 de novo neste subconjunto.
 
 \subsection{O que carrega a localização}
@@ -632,9 +633,10 @@ dos códigos, que destrói a ordem e preserva as identidades) está desenhado, m
 executado.
 
 \paragraph{O endereço somado às coordenadas.} Acrescentar o CEP e o campo de bairro à tabela
-crua, tal como preenchidos, move o RMSE em menos de $0{,}006$ em qualquer direção em todos os
-testes, o MAPE em no máximo $0{,}3$ ponto e o $I$ de Moran residual em no máximo $0{,}008$; a
-margem sobre o XGBoost+defasagem fica onde estava. Duas colunas numéricas cruas já carregam o
+crua, tal como preenchidos, move o RMSE em menos de $0{,}006$ em qualquer direção em todos os testes
+e combinações, o MAPE em no máximo $0{,}3$ ponto, e o $I$ de Moran residual em no máximo
+$0{,}019$ na VC por blocos e $0{,}008$ um ano à frente; a margem sobre o XGBoost+defasagem fica
+onde estava. Duas colunas numéricas cruas já carregam o
 que o endereço carrega. Uma observação lateral é reportada sem explicação: com os dois nomes na
 tabela, a subestimação média de 2026 cai de $+0{,}055$ para $+0{,}045$ em ln no Nível A e de
 $+0{,}058$ para $+0{,}043$ na base completa, com o RMSE parado.
@@ -682,8 +684,8 @@ validação interna por uma coluna de agrupamento; com o bloco espacial como gru
 interna passa a deixar distritos inteiros de fora, como a perna 1 faz. Contra o
 \emph{thinking} sem grupos, a mudança na perna 1 é $+0{,}0038$ $[-0{,}0055;\ +0{,}0149]$ (3 de
 10 blocos) e o $I$ residual vai de $0{,}342$ a $0{,}350$: o agrupamento não fecha a lacuna. Um
-ano à frente ele ganha $0{,}0014$ $[-0{,}0021;\ -0{,}0007]$ no RMSE e reduz a subestimação
-média de $+0{,}055$ para $+0{,}043$, mas ali o rótulo do bloco também informa ao modelo a que
+ano à frente a mudança é de $-0{,}0014$ $[-0{,}0021;\ -0{,}0007]$ (9 de 10 blocos) e ele reduz
+a subestimação média de $+0{,}055$ para $+0{,}043$, mas ali o rótulo do bloco também informa ao modelo a que
 parte da cidade pertence uma linha de 2026, de modo que o pequeno ganho não é um efeito puro de
 calibração. Num distrito não visto, o limite é de informação, não de desenho de validação: o
 texto move a perna 1, o agrupamento não.
@@ -732,7 +734,7 @@ residual incluída. A variante com o CEP afia a leitura: dentro desse mercado, o
 precisa de geometria alguma, apenas de um identificador fino de localização, e precifica
 códigos nunca vistos, em meio a códigos conhecidos, quase tão bem quanto os conhecidos. Do
 outro lado da linha, num distrito sem vendas na base de treino, o identificador colapsa, as
-coordenadas ainda extrapolam, e a defasagem espacial explícita ganha o seu sustento no critério
+coordenadas ainda extrapolam, e a defasagem espacial explícita justifica-se no critério
 dos resíduos: a refutação parcial da perna 1 é o preço medido de não modelar o espaço quando o
 bloco de teste é terreno novo. Esse preço encolhe com mais informação --- o texto livre do
 formulário reduz a lacuna e o erro --- e não aparece nos preços financiados, auditados pelo
@@ -744,7 +746,7 @@ alta de 2026, os aprendizes não lineares mais ($+0{,}04$ a $+0{,}10$ em ln, con
 $+0{,}03$ dos modelos lineares), porque as árvores e o modelo de fundação seguram o último
 nível observado do índice do mês em vez de extrapolá-lo. A prática de avaliação corrige isso
 com um índice de preços como rotina; nenhuma correção foi aplicada aqui, para que a comparação
-permaneça entre modelos tal como ajustados. O viés diz respeito ao nível, não à localização: os
+permaneça entre modelos tal como ajustados. O viés diz respeito ao nível e não à localização: os
 mapas de resíduos e o $I$ de Moran, que a tendência desloca uniformemente, continuam separando
 os modelos.
 
@@ -785,8 +787,9 @@ funcionam, está desenhado, não executado.
 A hipótese era que um modelo de fundação tabular recebendo as coordenadas como duas colunas
 numéricas simples prevê preços espacialmente correlacionados tão bem quanto, ou melhor que,
 modelos que codificam a dependência espacial explicitamente, e ela foi posta em risco contra
-quatro desses modelos, sobre 130.000 preços de transação declarados, com os critérios de
-refutação escritos antes. Um ano à frente, dentro do mercado observado, a hipótese sobrevive a
+três desses especialistas --- SAR, XGBoost com defasagem espacial e um XGBoost geograficamente
+ponderado ---, sobre 130.000 preços de transação declarados, com os critérios de refutação
+escritos antes. Um ano à frente, dentro do mercado observado, a hipótese sobrevive a
 todos os critérios nas duas escalas de treino: erro agregado menor que o do SAR, do XGBoost com
 defasagem espacial e do XGBoost geograficamente ponderado, vitórias em pelo menos 9 dos 10
 blocos espaciais contra cada semente de cada oponente, e a menor autocorrelação espacial
@@ -797,10 +800,9 @@ estrutura espacial que qualquer dos dois XGBoost; o texto livre do formulário e
 lacuna e o subconjunto financiado a dissolve contra o XGBoost+defasagem, mas na análise
 principal ela permanece. O veredito poderia mudar em outro lugar: outra cidade ou mercado,
 ofertas em vez de preços declarados, uma versão do modelo com atribuição por linha na
-regressão, ou o teste do código embaralhado são os experimentos que o moveriam. Como está, para
-a avaliação em massa dentro de um mercado com histórico de vendas, o preditor mais forte desta
-comparação é o modelo de fundação com a tabela crua --- sem matriz de pesos, sem defasagem, sem
-atributos de vizinhança, um ajuste de quinze segundos.
+regressão, ou o teste do código embaralhado são os experimentos que o moveriam. Como está, dentro de um
+mercado com histórico de vendas, nenhuma das maquinarias espaciais testadas aqui melhorou a
+tabela crua; o seu valor remanescente, medido, é a extrapolação para terreno sem vendas.
 
 \section*{Reprodutibilidade e disponibilidade dos dados}
 Código, dados limpos, respostas do modelo em cache e todos os números deste artigo estão em
@@ -861,9 +863,10 @@ coordenadas de treino); modelos locais com hiperparâmetros compartilhados ($300
 de aprendizado $0{,}05$, profundidade $4$); modelo global com $800$ rodadas, taxa $0{,}05$,
 profundidade $6$; uma consulta é prevista pela média, com pesos inversos à distância, de seus
 $3$ modelos locais mais próximos, combinada por $\alpha$. Banda $k$ e $\alpha$ por validação
-cruzada interna aninhada por blocos, grades na Seção~\ref{sec:methods}; escolhidos no Nível A:
-$k$ por dobra entre 40 e 176 com $\alpha = 0{,}5$ (perna 1), $k = 50$ (perna 2, 24k) e
-$k = 342$ (perna 2, 82k), $\alpha = 0{,}5$ em toda parte
+cruzada interna aninhada por blocos, grades na Seção~\ref{sec:methods} (os valores da grade
+escalam com o tamanho do treino, daí 40--176 nas dobras de 19--21 mil linhas do Nível A).
+Escolhidos: no Nível A, $k$ por dobra entre 40 e 176 (perna 1) e $k = 50$ (perna 2); na base
+completa, $k = 342$; $\alpha = 0{,}5$ em toda parte
 (\texttt{results/gxgb\_params\_*.json}).
 
 \paragraph{TabPFN-3.5.}\sloppy{} Modelo hospedado (\texttt{tabpfn-client} 0.6.0), criado por

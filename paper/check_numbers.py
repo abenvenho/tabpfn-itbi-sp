@@ -230,6 +230,12 @@ cm = J("compare_tabpfn_t0_think_medium_2025_level_a_vs_tabpfn_t0_2025_level_a.js
 close(cm["block_bootstrap"]["diff"], -0.005, 3, "think vs t0 seed42 -0.005")
 close(cm["block_bootstrap"]["ci95"][0], -0.008, 3, "...CI lo")
 close(cm["block_bootstrap"]["ci95"][1], -0.001, 3, "...CI hi")
+close(cm["wilcoxon"]["p_value"], 0.105, 3, "think vs t0 exact Wilcoxon p = 0.105")
+_pt = {r["block"]: r["rmse_ln"]
+       for r in J("cv_tabpfn_t0_think_medium_2025_level_a.json")["per_seed"]["42"]["per_fold"]}
+_p0 = {r["block"]: r["rmse_ln"]
+       for r in J("cv_tabpfn_t0_2025_level_a.json")["per_seed"]["42"]["per_fold"]}
+CHECK("think vs t0: 7 of 10 blocks", sum(_pt[k] < _p0[k] for k in _pt) == 7)
 TXT("think vs seeds 43/44 about -0.002", "\u22120.002 vs seeds 43 and 44", README)
 
 c = J("compare_xgb_lag_2025_level_a_vs_xgb_nolag_2025_level_a.json")
@@ -280,7 +286,7 @@ mx = seeds(L2f["models"]["xgb"], "mape_pct")
 close(mx[42], 21.5, 1, "XGB full MAPE seed42 21.5")
 close(min(mx.values()), 20.9, 1, "XGB full MAPE lo 20.9")
 ox = J("oot_xgb_lag_full.json")["per_seed"]
-close(ox["42"]["pooled"]["r2_ln"], 0.57, 2, "XGB full R2 0.57")
+close(ox["42"]["pooled"]["r2_ln"], 0.568, 3, "XGB full R2 0.568")
 close(ox["42"]["bias_ln"], 0.103, 3, "XGB full bias seed42 +0.103")
 bx = [ox[s]["bias_ln"] for s in ("42", "43", "44")]
 close(min(bx), 0.070, 3, "XGB full bias lo +0.07"); close(max(bx), 0.103, 3, "XGB full bias hi +0.10")
@@ -292,7 +298,7 @@ close(gwf[42], 0.298, 3, "leg2 full GW seed42 0.298")
 close(min(gwf.values()), 0.298, 3, "lo"); close(max(gwf.values()), 0.301, 3, "hi")
 close(seeds(L2f["models"]["gxgb"], "mape_pct")[42], 22.1, 1, "GW full MAPE 22.1")
 og = J("oot_gxgb_full.json")["per_seed"]
-close(og["42"]["pooled"]["r2_ln"], 0.56, 2, "GW full R2 0.56")
+close(og["42"]["pooled"]["r2_ln"], 0.557, 3, "GW full R2 0.557")
 close(og["42"]["bias_ln"], 0.065, 3, "GW full bias seed42 +0.06")
 bg = [og[s]["bias_ln"] for s in ("42", "43", "44")]
 close(min(bg), 0.065, 3, "GW full bias lo +0.06"); close(max(bg), 0.078, 3, "GW full bias hi +0.08")
@@ -484,21 +490,30 @@ sutxt = json.dumps(su)
 for s in ["0.97", "0.96", "0.98", "0.94", "0.22", "0.09"]:
     CHECK(f"seen/unseen share {s} present in descriptor summary", s in sutxt or s in dtxt, s)
 
-# address on top of the coordinates (nominal ablation)
-NA = json.loads((RES / "nominal_ablation_summary.json").read_text())
-natxt = json.dumps(NA)
-diffs = []
-for r in NA.get("comparisons", []) + (NA.get("pairs") or []):
-    d = find_key(r, "diff")
-    if d is not None:
-        diffs.append(abs(d))
-if not diffs:  # fall back: scan runs for rmse differences vs the plain rows
-    runs = NA["runs"]
-    plain = {r["leg"]: r["rmse_ln"] for r in runs if r["variant"] == "plain table"}
-    diffs = [abs(r["rmse_ln"] - plain[r["leg"]]) for r in runs if r["variant"] != "plain table"
-             and r["leg"] in plain]
-CHECK("address-on-top |dRMSE| < 0.006 everywhere", diffs and max(diffs) < 0.006,
-      f"max={max(diffs) if diffs else None}")
+# address on top of the coordinates: bounds on RMSE, MAPE and Moran's I, every
+# variant (bairro, cep, bairro+cep) in every test (the review's finding 1)
+def _pm(name, mkey, seed="42"):
+    d = J(name)["per_seed"][seed]
+    return d["pooled"]["rmse_ln"], d["pooled"]["mape_pct"], d[mkey]["I"]
+
+
+_base = {"cv": _pm("cv_tabpfn_t0_2025_level_a.json", "moran_oof"),
+         "la": _pm("oot_tabpfn_t0_level_a.json", "moran_test"),
+         "fu": _pm("oot_tabpfn_t0_full.json", "moran_test")}
+dr_all, dm_all, di_cv, di_oot = [], [], [], []
+for var in ("nom_bairro", "nom_cep", "nom_bairro_cep"):
+    for k, (f, mk) in {"cv": (f"cv_tabpfn_t0_{var}_2025_level_a.json", "moran_oof"),
+                       "la": (f"oot_tabpfn_t0_{var}_level_a.json", "moran_test"),
+                       "fu": (f"oot_tabpfn_t0_{var}_full.json", "moran_test")}.items():
+        r, m, i = _pm(f, mk)
+        dr_all.append(abs(r - _base[k][0])); dm_all.append(abs(m - _base[k][1]))
+        (di_cv if k == "cv" else di_oot).append(i - _base[k][2])
+CHECK("address-on-top |dRMSE| < 0.006 in every test and combination", max(dr_all) < 0.006,
+      f"max={max(dr_all):.4f}")
+CHECK("address-on-top |dMAPE| <= 0.3 pp", max(dm_all) <= 0.3, f"max={max(dm_all):.2f}")
+close(max(di_cv), 0.019, 3, "address-on-top max dI, block CV = 0.019")
+CHECK("address-on-top dI <= 0.008 one year ahead", max(di_oot) <= 0.0085,
+      f"max={max(di_oot):.4f}")
 TXT("bias drop with names, 24k (+0.055 -> +0.045)", "+0.055 → +0.045", FURTHER)
 TXT("bias drop with names, 82k (+0.058 -> +0.043)", "+0.058 → +0.043", FURTHER)
 

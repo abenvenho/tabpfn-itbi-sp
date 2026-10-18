@@ -22,9 +22,10 @@
 \usepackage[numbers,sort&compress]{natbib}
 \graphicspath{{figures/}}
 \captionsetup{font=small,labelfont=bf}
-\setlength{\bibsep}{2.5pt plus 0.3ex}
-\setlength{\textfloatsep}{11pt plus 2pt minus 3pt}
-\setlength{\floatsep}{9pt plus 2pt minus 2pt}
+\setlength{\bibsep}{1.6pt plus 0.3ex}
+\setlength{\textfloatsep}{9pt plus 2pt minus 4pt}
+\setlength{\floatsep}{7pt plus 2pt minus 3pt}
+\setlength{\abovecaptionskip}{5pt}
 \setlength{\emergencystretch}{1.5em}
 \newcommand{\Rsqm}{R\$/m\textsuperscript{2}}
 
@@ -183,8 +184,8 @@ geographically weighted XGBoost join the econometric baselines).
 The São Paulo City Hall publishes every paid form of the real-estate transfer tax (ITBI,
 \emph{Imposto sobre Transmissão de Bens Imóveis}) with the declared transaction price, the
 cadastral key (SQL: sector, block, lot) and the physical attributes of the property from the
-annual property-tax register (IPTU): built and lot area, use, construction standard, corrected
-completion year. The 2025 workbook holds 230{,}525 forms and the January--July 2026 workbook
+annual property-tax register (IPTU): built and lot area, use, construction standard and the corrected
+completion year (ACC, \emph{Ano de Constru\c{c}\~ao Corrigido}). The 2025 workbook holds 230{,}525 forms and the January--July 2026 workbook
 135{,}655. Coordinates come from the centroids of the fiscal-block polygons of the municipal
 cadastre (GeoSampa), so all properties in one city block share a location; distance to the
 nearest subway or commuter-rail station is computed from the 203 station points of the same
@@ -258,8 +259,8 @@ log unit price on the $k$-NN-8 matrix used throughout the paper is $0.430$ on th
 ($z = 141.8$) and $0.506$ on the 2026 base ($z = 235.7$): a property's unit value is close to its
 neighbours' far beyond chance, which is exactly the structure the spatial baselines are built to
 exploit. Figure~\ref{fig:blocks}(a) shows how the ten spatial blocks tile that structure over the
-city. Because coordinates are fiscal-block centroids, location is resolved to the city block, not
-the address --- a conservative choice shared by every model.
+city. Because coordinates are fiscal-block centroids, location is resolved to the city block rather
+than the address --- a conservative choice shared by every model.
 
 \section{Methods}
 \label{sec:methods}
@@ -339,7 +340,8 @@ with Level A.
 
 \paragraph{Metrics and tests.} RMSE, MAE and $R^2$ in log units, MAPE in price units, mean
 residual (bias). Residual spatial autocorrelation by Moran's $I$ \citep{moran1950} on a $k$-NN-8
-matrix of the test coordinates. Paired comparisons over the ten blocks: exact Wilcoxon
+matrix of the test coordinates. Paired comparisons over the ten blocks (for 2026, each
+transaction is assigned to the block of its nearest 2025 $K$-means centroid): exact Wilcoxon
 signed-rank test on the per-block RMSE and a block bootstrap (2{,}000 resamples of blocks) for
 the pooled difference with a 95\% percentile interval. Where a model is stochastic, three seeds
 (42, 43, 44) and the per-seed range; a TabPFN run (seed 42) is paired against every seed of a
@@ -391,8 +393,9 @@ tie, leaning TabPFN's way: $\Delta$RMSE $-0.013$ to $-0.016$ across that model's
 every interval across zero, 6 or 7 blocks won. The two XGBoost variants are not interchangeable:
 the geographically weighted one loses to XGBoost+lag by $+0.023$ to $+0.025$ (1 or 2 blocks won,
 $p = 0.027$--$0.037$), so the fully spatial global XGBoost is the hardest opponent in this leg.
-Thinking mode improves on zero-shot by a small, consistent margin ($-0.005$ $[-0.008, -0.001]$
-against seed 42, about $-0.002$ against the other seeds) and gives the lowest MAPE in the table;
+Thinking mode lowers the zero-shot error by a small margin ($-0.005$ $[-0.008, -0.001]$ against
+seed 42, 7 of 10 blocks, though the exact Wilcoxon does not reach significance, $p = 0.105$;
+about $-0.002$ against the other seeds) and gives the lowest MAPE in the table;
 high effort costs about 13 times more per fold and adds nothing beyond noise.
 
 On the residual criterion the hypothesis is partly refuted in this leg. Moran's $I$ of the
@@ -402,7 +405,8 @@ Inside XGBoost, the lag alone is worth $\Delta$RMSE $= -0.013$ $[-0.024, -0.004]
 residual $I$ from $0.355$ to $0.309$ --- the measurable value of modelling space explicitly when
 the test is a part of the city no model has seen. The refutation is partial and on the record.
 
-Errors are large in absolute terms ($R^2$ of $0.29$--$0.38$ against $0.538$ in the listings
+Errors are large in absolute terms ($R^2$ of $0.29$--$0.38$ for the non-linear models, against
+$0.538$ in the listings
 study): declared prices, three property types and centroid coordinates all add noise, and every
 model leaves spatial structure behind in this leg.
 
@@ -428,13 +432,13 @@ Level A (24k) & OLS hedonic & 0.404 & 32.4\% & 0.185 & $+0.033$ & 0.408 \\
 \midrule
 Full (82k) & OLS hedonic & 0.401 & 32.4\% & 0.194 & $+0.023$ & 0.397 \\
  & SAR lag & 0.326 & 25.0\% & 0.470 & $+0.031$ & 0.134 \\
- & XGBoost + lag & 0.294\textsuperscript{a} & 21.5\%\textsuperscript{a} & 0.57 & $+0.10$\textsuperscript{a} & 0.107\textsuperscript{a} \\
- & Geographically weighted XGBoost & 0.298\textsuperscript{b} & 22.1\% & 0.56 & $+0.06$\textsuperscript{b} & 0.163\textsuperscript{b} \\
+ & XGBoost + lag & 0.294\textsuperscript{a} & 21.5\%\textsuperscript{a} & 0.568 & $+0.103$\textsuperscript{a} & 0.107\textsuperscript{a} \\
+ & Geographically weighted XGBoost & 0.298\textsuperscript{b} & 22.1\% & 0.557 & $+0.065$\textsuperscript{b} & 0.163\textsuperscript{b} \\
  & TabPFN-3.5, zero-shot & \textbf{0.265} & \textbf{19.5\%} & \textbf{0.649} & $+0.058$ & \textbf{0.092} \\
 \bottomrule
 \end{tabular}\\[2pt]
-{\scriptsize \textsuperscript{a}\,seed 42; three seeds: RMSE 0.283--0.294, MAPE 20.9--21.5\%, bias $+0.07$--$+0.10$, $I$ 0.103--0.107.\quad
-\textsuperscript{b}\,seed 42; three seeds: RMSE 0.298--0.301, bias $+0.06$--$+0.08$, $I$ 0.163--0.166.}
+{\scriptsize \textsuperscript{a}\,seed 42; three seeds: RMSE 0.283--0.294, MAPE 20.9--21.5\%, bias $+0.070$--$+0.103$, $I$ 0.103--0.107.\quad
+\textsuperscript{b}\,seed 42; three seeds: RMSE 0.298--0.301, bias $+0.065$--$+0.078$, $I$ 0.163--0.166.}
 \end{table}
 
 Paired over the ten 2026 blocks, TabPFN-3.5 zero-shot trained on Level A beats XGBoost with the
@@ -593,8 +597,9 @@ destroying the order while keeping the identities) is designed but has not been 
 
 \paragraph{The address on top of the coordinates.} Adding the postal code and the district field
 to the plain table, as filed, moves the RMSE by less than $0.006$ in either direction in every
-test, the MAPE by at most $0.3$ points and the residual Moran's $I$ by at most $0.008$; the
-margin over XGBoost+lag stays where it was. Two raw numeric columns already carry what the
+test and combination, the MAPE by at most $0.3$ points, and the residual Moran's $I$ by at most
+$0.019$ in the block CV and $0.008$ one year ahead; the margin over XGBoost+lag stays where it
+was. Two raw numeric columns already carry what the
 address carries. One side observation is reported without an explanation: with both names in,
 the mean under-prediction of 2026 drops from $+0.055$ to $+0.045$ in ln on Level A and from
 $+0.058$ to $+0.043$ on the full base, while the RMSE stays put.
@@ -639,8 +644,9 @@ XGBoost variants.
 by a grouping column; with the spatial block as the group, the internal validation holds out
 whole districts, as leg 1 does. Against thinking without groups the change in leg 1 is $+0.0038$
 $[-0.0055, +0.0149]$ (3 of 10 blocks) and the residual $I$ moves from $0.342$ to $0.350$:
-grouping does not close the gap. One year ahead it gains $0.0014$ $[-0.0021, -0.0007]$ in RMSE
-and cuts the mean under-prediction from $+0.055$ to $+0.043$, but there the block label also
+grouping does not close the gap. One year ahead the change is $-0.0014$
+$[-0.0021, -0.0007]$ (9 of 10 blocks) and it cuts the mean under-prediction from $+0.055$ to
+$+0.043$, but there the block label also
 tells the model which part of the city a 2026 row belongs to, so the small gain is not purely a
 tuning effect. On an unseen district the limit is information, not validation design: the text
 moves leg 1, the grouping does not.
@@ -698,7 +704,7 @@ rising market of 2026, the non-linear learners more ($+0.04$ to $+0.10$ in ln ag
 $+0.03$ for the linear models), because trees and the foundation model hold the last observed
 level of the month index instead of extrapolating it. Appraisal practice corrects this with a
 price index as a matter of routine; no correction was applied here, so that the comparison
-stays between models as fitted. The bias concerns the level, not location: the residual maps and
+stays between models as fitted. The bias concerns the level rather than location: the residual maps and
 Moran's $I$, which the trend shifts uniformly, still separate the models.
 
 The engineering ledger is short. The SAR model needs a weights matrix per fold; the spatial
@@ -735,8 +741,9 @@ designed, not run.
 
 The hypothesis was that a tabular foundation model receiving coordinates as two plain numeric
 columns predicts spatially correlated prices as well as, or better than, models that encode
-spatial dependence explicitly, and it was put at risk against four such models on 130{,}000
-declared transaction prices with the refutation criteria written first. One year ahead, inside
+spatial dependence explicitly, and it was put at risk against three such specialists --- SAR,
+XGBoost with a spatial lag and a geographically weighted XGBoost --- on 130{,}000 declared
+transaction prices, with the refutation criteria written first. One year ahead, inside
 the observed market, the hypothesis survives every criterion at both training scales: lower
 pooled error than SAR, XGBoost with a spatial lag and a geographically weighted XGBoost, wins
 in at least 9 of 10 spatial blocks against every seed of every opponent, and the least residual
@@ -747,9 +754,9 @@ structure than either XGBoost; the free text of the tax form narrows that gap an
 financed-only subset dissolves it against XGBoost+lag, but in the main analysis it stands. The
 verdict could change elsewhere: another city or market, listings instead of declared prices, a
 model version with row-level attribution for regression, or the shuffled-code test, are the
-experiments that would move it. As it is, for mass appraisal within a market that has a sales
-history, the strongest predictor in this comparison is the foundation model with the raw table
---- no weights matrix, no lag, no neighbourhood features, one fit of fifteen seconds.
+experiments that would move it. As it is, within a market that has a sales history,
+none of the spatial machinery tested here improved on the raw table; its remaining value,
+measured, is extrapolation to ground without sales.
 
 \section*{Reproducibility and data availability}
 Code, cleaned data, cached model responses and every number in this paper are at
@@ -805,9 +812,10 @@ rounds; inner RMSE $0.351$; tuning time $901$~s
 training coordinates); local models with shared hyper-parameters ($300$ rounds, learning rate
 $0.05$, depth $4$); global model with $800$ rounds, learning rate $0.05$, depth $6$; a query
 predicted by the inverse-distance average of its $3$ nearest local models, blended by $\alpha$.
-Bandwidth $k$ and $\alpha$ by nested inner block CV, grids in Section~\ref{sec:methods}; chosen
-on Level A: $k$ per fold between 40 and 176 with $\alpha = 0.5$ (leg 1), $k = 50$ (leg 2, 24k)
-and $k = 342$ (leg 2, 82k), $\alpha = 0.5$ throughout
+Bandwidth $k$ and $\alpha$ by nested inner block CV, grids in Section~\ref{sec:methods} (the
+grid values scale with the training size, hence 40--176 on the 19--21k-row training folds of
+Level A). Chosen: on Level A, $k$ per fold between 40 and 176 (leg 1) and $k = 50$ (leg 2); on
+the full base, $k = 342$; $\alpha = 0.5$ throughout
 (\texttt{results/gxgb\_params\_*.json}).
 
 \paragraph{TabPFN-3.5.} Hosted model, \texttt{tabpfn-client} 0.6.0,
