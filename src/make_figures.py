@@ -15,7 +15,7 @@ Figures (``results/figures/``):
 1. ``fig1_blocks_map.png``        — the 10 K-means blocks (leave-one-block-out
    folds) over the Level A sample, and the out-of-time RMSE_ln difference
    TabPFN − XGB+lag per block on the map
-2. ``fig2_per_block_rmse.png``    — RMSE_ln per block, three models, both legs
+2. ``fig2_per_block_rmse.png``    — RMSE_ln per block, four models, both legs
 3. ``fig3_pred_vs_obs_2026.png``  — predicted vs observed ln(R$/m²) on the
    47,810 transactions of 2026, XGB+lag and TabPFN trained on the full base
 4. ``fig4_months_ahead_bias.png`` — mean residual (bias) by month ahead, 2026
@@ -27,7 +27,7 @@ Figures (``results/figures/``):
    value to the prediction
 
 Colour roles are fixed per model across every figure (SAR blue, XGB+lag
-orange, TabPFN aqua, OLS grey); no figure encodes identity by colour alone.
+orange, geographically weighted XGBoost violet, TabPFN aqua, OLS grey); no figure encodes identity by colour alone.
 """
 
 from __future__ import annotations
@@ -47,12 +47,14 @@ FIG_DIR = RESULTS / "figures"
 LEVEL_A = Path("data/itbi_sp_2025_level_a.csv")
 
 # fixed colour roles (validated categorical palette, light surface)
-C = {"ols": "#8a8984", "sar_gm": "#2a78d6", "xgb_lag": "#eb6834", "tabpfn_t0": "#1baf7a",
+C = {"ols": "#8a8984", "sar_gm": "#2a78d6", "xgb_lag": "#eb6834", "gxgb": "#8a5bd6",
+     "tabpfn_t0": "#1baf7a",
      "text": "#0b0b0b", "text2": "#52514e", "grid": "#e6e5e1", "surface": "#fcfcfb",
      "neg": "#2a78d6", "pos": "#eb6834", "mid": "#c3c2b7"}
 NAME = {"ols": "OLS hedonic", "sar_gm": "SAR-GM (k-NN-8, ρ)", "xgb_lag": "XGBoost + spatial lag",
+        "gxgb": "Geographically weighted XGBoost",
         "tabpfn_t0": "TabPFN-3.5 zero-shot (plain table)"}
-MARK = {"ols": "s", "sar_gm": "o", "xgb_lag": "^", "tabpfn_t0": "D"}
+MARK = {"ols": "s", "sar_gm": "o", "xgb_lag": "^", "gxgb": "v", "tabpfn_t0": "D"}
 FEATURE_LABEL = {"area_construida_m2": "built area (m²)", "area_terreno_m2": "lot area (m²)",
                  "idade": "age (years)", "padrao_nivel": "finish grade (IPTU)",
                  "dist_estacao_m": "distance to station (m)", "mes_idx": "month index",
@@ -152,10 +154,12 @@ def fig1_blocks_map() -> None:
 def fig2_per_block_rmse() -> None:
     legs = [("Leg 1 — spatial CV on Level A (24k), out-of-fold",
              {"sar_gm": ("cv_sar_gm_2025_level_a.json", "per_fold"),
+              "gxgb": ("cv_gxgb_2025_level_a.json", "per_fold"),
               "xgb_lag": ("cv_xgb_lag_2025_level_a.json", "per_fold"),
               "tabpfn_t0": ("cv_tabpfn_t0_2025_level_a.json", "per_fold")}),
             ("Leg 2 — fitted on 2025 (82k), evaluated on 2026 (47,810)",
              {"sar_gm": ("oot_sar_gm_full.json", "per_block"),
+              "gxgb": ("oot_gxgb_full.json", "per_block"),
               "xgb_lag": ("oot_xgb_lag_full.json", "per_block"),
               "tabpfn_t0": ("oot_tabpfn_t0_full.json", "per_block")})]
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.6), sharey=True)
@@ -176,7 +180,7 @@ def fig2_per_block_rmse() -> None:
         ax.grid(axis="y", visible=False)
     axes[0].invert_yaxis()
     h, l = axes[0].get_legend_handles_labels()
-    fig.legend(h, l, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.04))
+    fig.legend(h, l, loc="lower center", ncol=4, bbox_to_anchor=(0.5, -0.04))
     save(fig, "fig2_per_block_rmse.png")
 
 
@@ -213,7 +217,7 @@ def fig3_pred_vs_obs() -> None:
 # --------------------------------------------------------------------------
 def fig4_months_ahead_bias() -> None:
     fig, ax = plt.subplots(figsize=(7.2, 4.2))
-    for m in ["ols", "sar_gm", "xgb_lag", "tabpfn_t0"]:
+    for m in ["ols", "sar_gm", "gxgb", "xgb_lag", "tabpfn_t0"]:
         rows = [r for r in _j(f"oot_{m}_full.json")["per_seed"]["42"]["per_month_ahead"]
                 if r["n"] >= 500]
         x = [r["months_ahead"] for r in rows]; y = [r["bias_ln"] for r in rows]
@@ -228,7 +232,7 @@ def fig4_months_ahead_bias() -> None:
     ax.set_xlim(-0.3, 8.6)
     ax.set_xticks(range(0, 7))
     ax.set_ylim(bottom=-0.005)
-    ax.legend(loc="upper center", ncol=4, bbox_to_anchor=(0.5, -0.16))
+    ax.legend(loc="upper center", ncol=3, bbox_to_anchor=(0.5, -0.16))
     save(fig, "fig4_months_ahead_bias.png")
 
 
@@ -239,11 +243,13 @@ def fig5_moran() -> None:
     legs = [("Leg 1 — CV on Level A (24k),\nout-of-fold residuals",
              {"ols": ("cv_ols_2025_level_a.json", "moran_oof"),
               "sar_gm": ("cv_sar_gm_2025_level_a.json", "moran_oof"),
+              "gxgb": ("cv_gxgb_2025_level_a.json", "moran_oof"),
               "xgb_lag": ("cv_xgb_lag_2025_level_a.json", "moran_oof"),
               "tabpfn_t0": ("cv_tabpfn_t0_2025_level_a.json", "moran_oof")}),
             ("Leg 2 — 2026 residuals,\nmodels fitted on 2025 (82k)",
              {"ols": ("oot_ols_full.json", "moran_test"),
               "sar_gm": ("oot_sar_gm_full.json", "moran_test"),
+              "gxgb": ("oot_gxgb_full.json", "moran_test"),
               "xgb_lag": ("oot_xgb_lag_full.json", "moran_test"),
               "tabpfn_t0": ("oot_tabpfn_t0_full.json", "moran_test")})]
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.2), sharex=True)

@@ -1,4 +1,15 @@
-% Entries marked CHECK need the author's verification of details (pages, venue, year).
+% References for "Location, location, location: does a tabular foundation model need spatial
+% features?". All entries verified against the publisher's or arXiv's record on 2026-10-18.
+
+% ---------- tabular foundation models ----------
+
+@inproceedings{vaswani2017,
+  author    = {Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N. and Kaiser, {\L}ukasz and Polosukhin, Illia},
+  title     = {Attention is all you need},
+  booktitle = {Advances in Neural Information Processing Systems 30},
+  pages     = {5998--6008},
+  year      = {2017}
+}
 
 @inproceedings{hollmann2023tabpfn,
   author    = {Hollmann, Noah and M{\"u}ller, Samuel and Eggensperger, Katharina and Hutter, Frank},
@@ -22,15 +33,73 @@
   title       = {{TabPFN-3}: Technical Report},
   institution = {Prior Labs},
   year        = {2026},
-  note        = {arXiv:2605.13986. CHECK: add the TabPFN-3.5 release note or report if one exists}
+  note        = {arXiv:2605.13986}
 }
 
-@article{benvenho2026cead,
-  author  = {Benvenho, Agnaldo Calvi},
-  title   = {M{\'e}todos n{\~a}o lineares versus regress{\~a}o espacial na avalia{\c{c}}{\~a}o de apartamentos: um estudo comparativo em {Belo Horizonte}},
-  journal = {Anais do CEAD 2026},
+@techreport{priorlabs2026tabpfn35,
+  author      = {{Prior Labs Team}},
+  title       = {{TabPFN-3.5}: Technical Report},
+  institution = {Prior Labs},
+  year        = {2026},
+  note        = {arXiv:2609.17895}
+}
+
+@article{deng2026gsa,
+  author  = {Deng, Rui and Li, Ziqi and Wang, Mingshu},
+  title   = {Do foundation models work for geospatial tabular data? {An} investigation of {TabPFN} and a proposed enhancement based on geospatial sparse attention},
+  journal = {International Journal of Geographical Information Science},
   year    = {2026},
-  note    = {CHECK: full congress name, place, pages, award}
+  note    = {Early online publication},
+  doi     = {10.1080/13658816.2026.2691066}
+}
+
+@techreport{schmidinger2026kpr,
+  author      = {Schmidinger, Jonas and Barkov, Viacheslav and Vogel, Sebastian and Atzmueller, Martin and Heuvelink, Gerard B. M.},
+  title       = {Kriging prior Regression: A Case for Kriging-Based Spatial Features with {TabPFN} in Soil Mapping},
+  institution = {arXiv},
+  year        = {2026},
+  note        = {arXiv:2509.09408}
+}
+
+% ---------- the author's earlier studies ----------
+
+@inproceedings{benvenho2026igel,
+  author    = {Benvenho, Agnaldo Calvi},
+  title     = {Transformers na avalia{\c{c}}{\~a}o de im{\'o}veis residenciais: compara{\c{c}}{\~a}o entre regress{\~a}o linear m{\'u}ltipla, {FT-Transformer} e {TabPFN} v2 com dados de {ITBI} de {S{\~a}o Paulo}},
+  booktitle = {Anais do I F{\'o}rum Nacional IGEL \& SOBREA},
+  year      = {2026},
+  month     = {August},
+  note      = {In Portuguese}
+}
+
+@inproceedings{benvenho2026cead,
+  author    = {Benvenho, Agnaldo Calvi},
+  title     = {M{\'e}todos n{\~a}o lineares versus regress{\~a}o espacial na avalia{\c{c}}{\~a}o de apartamentos: um estudo comparativo em {Belo Horizonte}},
+  booktitle = {Anais da III Confer{\^e}ncia de Engenharia de Avalia{\c{c}}{\~o}es e Diagn{\'o}stica (CEAD)},
+  year      = {2026},
+  month     = {September},
+  note      = {In Portuguese. Best-paper award in appraisal engineering}
+}
+
+% ---------- hedonic and spatial econometrics ----------
+
+@article{rosen1974,
+  author  = {Rosen, Sherwin},
+  title   = {Hedonic prices and implicit markets: Product differentiation in pure competition},
+  journal = {Journal of Political Economy},
+  volume  = {82},
+  number  = {1},
+  pages   = {34--55},
+  year    = {1974}
+}
+
+@article{tobler1970,
+  author  = {Tobler, Waldo R.},
+  title   = {A computer movie simulating urban growth in the {Detroit} region},
+  journal = {Economic Geography},
+  volume  = {46},
+  pages   = {234--240},
+  year    = {1970}
 }
 
 @book{anselin1988,
@@ -58,6 +127,14 @@
   year      = {2009}
 }
 
+@book{fotheringham2002,
+  author    = {Fotheringham, A. Stewart and Brunsdon, Chris and Charlton, Martin},
+  title     = {Geographically Weighted Regression: The Analysis of Spatially Varying Relationships},
+  publisher = {Wiley},
+  address   = {Chichester},
+  year      = {2002}
+}
+
 @article{rey2010pysal,
   author  = {Rey, Sergio J. and Anselin, Luc},
   title   = {{PySAL}: A {Python} library of spatial analytical methods},
@@ -67,6 +144,47 @@
   pages   = {5--27},
   year    = {2007}
 }
+
+% ---------- machine learning with spatial features ----------
+
+@article{grekousis2025,
+  author  = {Grekousis, George},
+  title   = {Geographical-{XGBoost}: a new ensemble model for spatially local regression based on gradient-boosted trees},
+  journal = {Journal of Geographical Systems},
+  volume  = {27},
+  number  = {2},
+  pages   = {169--195},
+  year    = {2025},
+  doi     = {10.1007/s10109-025-00465-4}
+}
+
+@article{moller2020,
+  author  = {M{\o}ller, Anders Bj{\o}rn and Beucher, Amélie Marie and Pouladi, Nastaran and Greve, Mogens Humlekrog},
+  title   = {Oblique geographic coordinates as covariates for digital soil mapping},
+  journal = {SOIL},
+  volume  = {6},
+  pages   = {269--289},
+  year    = {2020},
+  doi     = {10.5194/soil-6-269-2020}
+}
+
+@inproceedings{chen2016xgboost,
+  author    = {Chen, Tianqi and Guestrin, Carlos},
+  title     = {{XGBoost}: A scalable tree boosting system},
+  booktitle = {Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
+  pages     = {785--794},
+  year      = {2016}
+}
+
+@inproceedings{akiba2019optuna,
+  author    = {Akiba, Takuya and Sano, Shotaro and Yanase, Toshihiko and Ohta, Takeru and Koyama, Masanori},
+  title     = {Optuna: A next-generation hyperparameter optimization framework},
+  booktitle = {Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
+  pages     = {2623--2631},
+  year      = {2019}
+}
+
+% ---------- validation, diagnostics, explanation ----------
 
 @article{roberts2017,
   author  = {Roberts, David R. and Bahn, Volker and Ciuti, Simone and Boyce, Mark S. and Elith, Jane and Guillera-Arroita, Gurutzeta and Hauenstein, Severin and Lahoz-Monfort, Jos{\'e} J. and Schr{\"o}der, Boris and Thuiller, Wilfried and Warton, David I. and Wintle, Brendan A. and Hartig, Florian and Dormann, Carsten F.},
@@ -96,22 +214,6 @@
   number  = {1/2},
   pages   = {17--23},
   year    = {1950}
-}
-
-@inproceedings{chen2016xgboost,
-  author    = {Chen, Tianqi and Guestrin, Carlos},
-  title     = {{XGBoost}: A scalable tree boosting system},
-  booktitle = {Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
-  pages     = {785--794},
-  year      = {2016}
-}
-
-@inproceedings{akiba2019optuna,
-  author    = {Akiba, Takuya and Sano, Shotaro and Yanase, Toshihiko and Ohta, Takeru and Koyama, Masanori},
-  title     = {Optuna: A next-generation hyperparameter optimization framework},
-  booktitle = {Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
-  pages     = {2623--2631},
-  year      = {2019}
 }
 
 @inproceedings{lundberg2017shap,

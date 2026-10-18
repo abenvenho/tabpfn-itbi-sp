@@ -1,0 +1,14 @@
+{
+ "what": "Moran's I of the raw response ln(R$/m2) on the k-NN-8 matrix (jittered coords, seed 42), descriptive statistic for the paper",
+ "generated_by": "paper/check_numbers.py reproduces this",
+ "level_a_2025": {
+  "n": 24000,
+  "moran_I_ln_vu": 0.4298,
+  "z_norm": 141.8
+ },
+ "test_2026": {
+  "n": 47810,
+  "moran_I_ln_vu": 0.5059,
+  "z_norm": 235.7
+ }
+}

@@ -1,0 +1,182 @@
+\begin{thebibliography}{24}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Akiba et~al.(2019)Akiba, Sano, Yanase, Ohta, and
+  Koyama]{akiba2019optuna}
+Takuya Akiba, Shotaro Sano, Toshihiko Yanase, Takeru Ohta, and Masanori Koyama.
+\newblock Optuna: A next-generation hyperparameter optimization framework.
+\newblock In \emph{Proceedings of the 25th ACM SIGKDD International Conference
+  on Knowledge Discovery and Data Mining}, pages 2623--2631, 2019.
+
+\bibitem[Anselin(1988)]{anselin1988}
+Luc Anselin.
+\newblock \emph{Spatial Econometrics: Methods and Models}.
+\newblock Kluwer Academic Publishers, Dordrecht, 1988.
+
+\bibitem[Benvenho(2026{\natexlab{a}})]{benvenho2026cead}
+Agnaldo~Calvi Benvenho.
+\newblock M{\'e}todos n{\~a}o lineares versus regress{\~a}o espacial na
+  avalia{\c{c}}{\~a}o de apartamentos: um estudo comparativo em {Belo
+  Horizonte}.
+\newblock In \emph{Anais da III Confer{\^e}ncia de Engenharia de
+  Avalia{\c{c}}{\~o}es e Diagn{\'o}stica (CEAD)}, September 2026{\natexlab{a}}.
+\newblock In Portuguese. Best-paper award in appraisal engineering.
+
+\bibitem[Benvenho(2026{\natexlab{b}})]{benvenho2026igel}
+Agnaldo~Calvi Benvenho.
+\newblock Transformers na avalia{\c{c}}{\~a}o de im{\'o}veis residenciais:
+  compara{\c{c}}{\~a}o entre regress{\~a}o linear m{\'u}ltipla,
+  {FT-Transformer} e {TabPFN} v2 com dados de {ITBI} de {S{\~a}o Paulo}.
+\newblock In \emph{Anais do I F{\'o}rum Nacional IGEL \& SOBREA}, August
+  2026{\natexlab{b}}.
+\newblock In Portuguese.
+
+\bibitem[Chen and Guestrin(2016)]{chen2016xgboost}
+Tianqi Chen and Carlos Guestrin.
+\newblock {XGBoost}: A scalable tree boosting system.
+\newblock In \emph{Proceedings of the 22nd ACM SIGKDD International Conference
+  on Knowledge Discovery and Data Mining}, pages 785--794, 2016.
+
+\bibitem[Deng et~al.(2026)Deng, Li, and Wang]{deng2026gsa}
+Rui Deng, Ziqi Li, and Mingshu Wang.
+\newblock Do foundation models work for geospatial tabular data? {An}
+  investigation of {TabPFN} and a proposed enhancement based on geospatial
+  sparse attention.
+\newblock \emph{International Journal of Geographical Information Science},
+  2026.
+\newblock \doi{10.1080/13658816.2026.2691066}.
+\newblock Early online publication.
+
+\bibitem[Fotheringham et~al.(2002)Fotheringham, Brunsdon, and
+  Charlton]{fotheringham2002}
+A.~Stewart Fotheringham, Chris Brunsdon, and Martin Charlton.
+\newblock \emph{Geographically Weighted Regression: The Analysis of Spatially
+  Varying Relationships}.
+\newblock Wiley, Chichester, 2002.
+
+\bibitem[Grekousis(2025)]{grekousis2025}
+George Grekousis.
+\newblock Geographical-{XGBoost}: a new ensemble model for spatially local
+  regression based on gradient-boosted trees.
+\newblock \emph{Journal of Geographical Systems}, 27\penalty0 (2):\penalty0
+  169--195, 2025.
+\newblock \doi{10.1007/s10109-025-00465-4}.
+
+\bibitem[Hollmann et~al.(2023)Hollmann, M{\"u}ller, Eggensperger, and
+  Hutter]{hollmann2023tabpfn}
+Noah Hollmann, Samuel M{\"u}ller, Katharina Eggensperger, and Frank Hutter.
+\newblock {TabPFN}: A transformer that solves small tabular classification
+  problems in a second.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2023.
+
+\bibitem[Hollmann et~al.(2025)Hollmann, M{\"u}ller, Purucker, Krishnakumar,
+  K{\"o}rfer, Hoo, Schirrmeister, and Hutter]{hollmann2025nature}
+Noah Hollmann, Samuel M{\"u}ller, Lennart Purucker, Arjun Krishnakumar, Max
+  K{\"o}rfer, Shi~Bin Hoo, Robin~Tibor Schirrmeister, and Frank Hutter.
+\newblock Accurate predictions on small data with a tabular foundation model.
+\newblock \emph{Nature}, 637:\penalty0 319--326, 2025.
+\newblock \doi{10.1038/s41586-024-08328-6}.
+
+\bibitem[Kelejian and Prucha(1998)]{kelejian1998}
+Harry~H. Kelejian and Ingmar~R. Prucha.
+\newblock A generalized spatial two-stage least squares procedure for
+  estimating a spatial autoregressive model with autoregressive disturbances.
+\newblock \emph{The Journal of Real Estate Finance and Economics}, 17\penalty0
+  (1):\penalty0 99--121, 1998.
+
+\bibitem[LeSage and Pace(2009)]{lesage2009}
+James LeSage and R.~Kelley Pace.
+\newblock \emph{Introduction to Spatial Econometrics}.
+\newblock Chapman and Hall/CRC, 2009.
+
+\bibitem[Lundberg and Lee(2017)]{lundberg2017shap}
+Scott~M. Lundberg and Su-In Lee.
+\newblock A unified approach to interpreting model predictions.
+\newblock In \emph{Advances in Neural Information Processing Systems 30}, pages
+  4765--4774, 2017.
+
+\bibitem[Meyer and Pebesma(2021)]{meyer2022}
+Hanna Meyer and Edzer Pebesma.
+\newblock Predicting into unknown space? {Estimating} the area of applicability
+  of spatial prediction models.
+\newblock \emph{Methods in Ecology and Evolution}, 12\penalty0 (9):\penalty0
+  1620--1633, 2021.
+
+\bibitem[M{\o}ller et~al.(2020)M{\o}ller, Beucher, Pouladi, and
+  Greve]{moller2020}
+Anders~Bj{\o}rn M{\o}ller, Amélie~Marie Beucher, Nastaran Pouladi, and
+  Mogens~Humlekrog Greve.
+\newblock Oblique geographic coordinates as covariates for digital soil
+  mapping.
+\newblock \emph{SOIL}, 6:\penalty0 269--289, 2020.
+\newblock \doi{10.5194/soil-6-269-2020}.
+
+\bibitem[Moran(1950)]{moran1950}
+P.~A.~P. Moran.
+\newblock Notes on continuous stochastic phenomena.
+\newblock \emph{Biometrika}, 37\penalty0 (1/2):\penalty0 17--23, 1950.
+
+\bibitem[{Prior Labs Team}(2026{\natexlab{a}})]{priorlabs2026tabpfn3}
+{Prior Labs Team}.
+\newblock {TabPFN-3}: Technical report.
+\newblock Technical report, Prior Labs, 2026{\natexlab{a}}.
+\newblock arXiv:2605.13986.
+
+\bibitem[{Prior Labs Team}(2026{\natexlab{b}})]{priorlabs2026tabpfn35}
+{Prior Labs Team}.
+\newblock {TabPFN-3.5}: Technical report.
+\newblock Technical report, Prior Labs, 2026{\natexlab{b}}.
+\newblock arXiv:2609.17895.
+
+\bibitem[Rey and Anselin(2007)]{rey2010pysal}
+Sergio~J. Rey and Luc Anselin.
+\newblock {PySAL}: A {Python} library of spatial analytical methods.
+\newblock \emph{The Review of Regional Studies}, 37\penalty0 (1):\penalty0
+  5--27, 2007.
+
+\bibitem[Roberts et~al.(2017)Roberts, Bahn, Ciuti, Boyce, Elith,
+  Guillera-Arroita, Hauenstein, Lahoz-Monfort, Schr{\"o}der, Thuiller, Warton,
+  Wintle, Hartig, and Dormann]{roberts2017}
+David~R. Roberts, Volker Bahn, Simone Ciuti, Mark~S. Boyce, Jane Elith,
+  Gurutzeta Guillera-Arroita, Severin Hauenstein, Jos{\'e}~J. Lahoz-Monfort,
+  Boris Schr{\"o}der, Wilfried Thuiller, David~I. Warton, Brendan~A. Wintle,
+  Florian Hartig, and Carsten~F. Dormann.
+\newblock Cross-validation strategies for data with temporal, spatial,
+  hierarchical, or phylogenetic structure.
+\newblock \emph{Ecography}, 40\penalty0 (8):\penalty0 913--929, 2017.
+
+\bibitem[Rosen(1974)]{rosen1974}
+Sherwin Rosen.
+\newblock Hedonic prices and implicit markets: Product differentiation in pure
+  competition.
+\newblock \emph{Journal of Political Economy}, 82\penalty0 (1):\penalty0
+  34--55, 1974.
+
+\bibitem[Schmidinger et~al.(2026)Schmidinger, Barkov, Vogel, Atzmueller, and
+  Heuvelink]{schmidinger2026kpr}
+Jonas Schmidinger, Viacheslav Barkov, Sebastian Vogel, Martin Atzmueller, and
+  Gerard B.~M. Heuvelink.
+\newblock Kriging prior regression: A case for kriging-based spatial features
+  with {TabPFN} in soil mapping.
+\newblock Technical report, arXiv, 2026.
+\newblock arXiv:2509.09408.
+
+\bibitem[Tobler(1970)]{tobler1970}
+Waldo~R. Tobler.
+\newblock A computer movie simulating urban growth in the {Detroit} region.
+\newblock \emph{Economic Geography}, 46:\penalty0 234--240, 1970.
+
+\bibitem[Vaswani et~al.(2017)Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez,
+  Kaiser, and Polosukhin]{vaswani2017}
+Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones,
+  Aidan~N. Gomez, {\L}ukasz Kaiser, and Illia Polosukhin.
+\newblock Attention is all you need.
+\newblock In \emph{Advances in Neural Information Processing Systems 30}, pages
+  5998--6008, 2017.
+
+\end{thebibliography}
